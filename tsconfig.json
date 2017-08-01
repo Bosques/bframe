@@ -29,4 +29,7 @@
     ,"exclude": [
         "node_modules"
     ]
+    ,"include":[
+        "./typing/core.d.ts"
+    ]
 }

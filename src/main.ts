@@ -1,11 +1,10 @@
 import {log} from './info';
-//import * as common from './common';
-import {add} from './common';
+import * as core from 'common';
 
 export function init(){
-    log("Main module loaded");
+    log("Bframe module loaded");
 }
 
 let w = <any>window;
 w.test = [];
-add(w.test, 'success');
+core.add(w.test, 'success');

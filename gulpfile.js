@@ -16,9 +16,10 @@ reg([
     , '_watch:vendor'   // watch vender source code update (gulpfile-watch.js->vendor)
     , '_watch:html'     // watch html page update (gulpfile-watch.js->html)
     , '_watch:asset'    // watch asset update (gulpfile-watch.js->asset)
+    , '_watch:pre'      // watch pre-build source code change (eg. build core project)
 ]);
 gulp.task("default", function(done){
-    runSequence('vendor', 'page', 'asset', 'scss', 'ts', function() {
+    runSequence('pre','vendor', 'page', 'asset', 'scss', 'ts', function() {
         done();
     });
 });
