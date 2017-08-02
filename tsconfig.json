@@ -2,7 +2,7 @@
 {
     "compilerOptions": {
         "outDir": "./dist",
-        "outFile": "./dist/bundle.js",
+        "outFile": "./dist/bframe.js",
         "baseUrl": "./src",
         "sourceMap": true,
         "declaration": true,
@@ -24,12 +24,12 @@
         ]
     }
     , "files": [
-        "./src/main.ts"
+        "./src/bframe.ts"
     ]
     ,"exclude": [
         "node_modules"
     ]
     ,"include":[
-        "./typing/core.d.ts"
+        "./typing/*.ts"
     ]
 }

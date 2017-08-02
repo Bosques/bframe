@@ -32,6 +32,6 @@ declare module "common" {
 declare module "info" {
     export function log(msg: string): void;
 }
-declare module "main" {
+declare module "core" {
     export function init(): void;
 }

@@ -4,11 +4,30 @@
 <head>
     <title>Home</title>
     <link rel="stylesheet" type="text/css" href="th-nb.css" />
-    <script data-main="loader" src="require.js"></script>
+    <script src="oimo.js"></script>
+    <script src="cannon.js"></script>
+    <script src="babylon.js"></script>
+    <script src="require.js" data-main="loader"></script>
+
+    <style>
+    html, body {
+        overflow: hidden;
+        width   : 100%;
+        height  : 100%;
+        margin  : 0;
+        padding : 0;
+    }
+
+    #renderCanvas {
+        width   : 100%;
+        height  : 100%;
+        touch-action: none;
+    }
+    </style>
 </head>
 
 <body class="w nb">
-    Home page
+    <canvas id="renderCanvas"></canvas>>
 </body>
 
 </html>

@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "gulp clean && gulp",
-    "test": "gulp clean && gulp && gulp host watch:ts watch:html watch:vendor watch:asset"
+    "test": "gulp clean && gulp && gulp host watch:ts watch:html watch:vendor watch:asset watch:pre"
   },
   "repository": {
     "type": "git",

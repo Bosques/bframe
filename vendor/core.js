@@ -234,7 +234,7 @@ define("info", ["require", "exports", "common"], function (require, exports, com
     }
     exports.log = log;
 });
-define("main", ["require", "exports", "info", "common"], function (require, exports, info_1, common_2) {
+define("core", ["require", "exports", "info", "common"], function (require, exports, info_1, common_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function init() {
