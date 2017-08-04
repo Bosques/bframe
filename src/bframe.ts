@@ -4,26 +4,30 @@ import * as info from 'info';
 export function init(){
     info.log("Bframe module loaded");
 
-    let game = new Game('renderCanvas');
+    let bframe = new BFrame(document.body);
 
     // Create the scene
-    game.createScene();
+    bframe.createScene();
 
     // start animation
-    game.animate();
+    bframe.animate();
 }
 
-class Game {
+class BFrame {
     private _canvas: HTMLCanvasElement;
     private _engine: BABYLON.Engine;
     private _scene: BABYLON.Scene;
     private _camera: BABYLON.FreeCamera;
     private _light: BABYLON.Light;
 
-    constructor(canvasElement : string) {
-      // Create canvas and engine
-        this._canvas = <HTMLCanvasElement>document.getElementById(canvasElement);
-        this._engine = new BABYLON.Engine(this._canvas, true);
+    constructor(entry : any) {
+        // Create canvas and engine
+        let entryEl:Element = entry;
+        if (typeof(entry) == 'string'){
+            entryEl = document.querySelector(entry);
+        }
+        // this._canvas = <HTMLCanvasElement>document.getElementById(entry);
+        // this._engine = new BABYLON.Engine(this._canvas, true);
     }
 
     createScene() : void {

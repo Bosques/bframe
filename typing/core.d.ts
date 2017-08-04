@@ -23,15 +23,37 @@ declare module "common" {
         protected list: T[];
         regist(item: T): void;
     }
-    export class NamedFactory<T> {
+    export class NamedFactory<T extends NamedObject> {
         protected cache: any;
-        regist(name: string, item: T): void;
+        regist(item: T): void;
         get(name: string): any;
+    }
+    export class NamedObject {
+        protected ignoreCase: boolean;
+        protected _name: string;
+        readonly name: string;
+        constructor(name: string, ignoreCase?: boolean);
     }
 }
 declare module "info" {
     export function log(msg: string): void;
 }
+declare module "web/modules/noder" {
+    import * as core from "common";
+    export class Noder extends core.NamedFactory<ModuleFactory> {
+        constructor();
+        parse(entry: any): void;
+        protected getentries(entry: any): any;
+    }
+    export class ModuleFactory extends core.NamedObject {
+        constructor(name: string);
+    }
+    export class ModuleItem {
+        factory: ModuleFactory;
+        target: Element;
+        constructor(factory: ModuleFactory, target: Element);
+    }
+}
 declare module "core" {
-    export function init(): void;
+    export function init(callback?: Function): void;
 }

@@ -1,3 +1,13 @@
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 define("common", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -214,8 +224,8 @@ define("common", ["require", "exports"], function (require, exports) {
         function NamedFactory() {
             this.cache = {};
         }
-        NamedFactory.prototype.regist = function (name, item) {
-            this.cache[name] = item;
+        NamedFactory.prototype.regist = function (item) {
+            this.cache[item.name] = item;
         };
         NamedFactory.prototype.get = function (name) {
             return this.cache[name];
@@ -223,6 +233,21 @@ define("common", ["require", "exports"], function (require, exports) {
         return NamedFactory;
     }());
     exports.NamedFactory = NamedFactory;
+    var NamedObject = (function () {
+        function NamedObject(name, ignoreCase) {
+            this.ignoreCase = ignoreCase;
+            this._name = ignoreCase ? name.toLowerCase() : name;
+        }
+        Object.defineProperty(NamedObject.prototype, "name", {
+            get: function () {
+                return this._name;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        return NamedObject;
+    }());
+    exports.NamedObject = NamedObject;
 });
 define("info", ["require", "exports", "common"], function (require, exports, common_1) {
     "use strict";
@@ -234,11 +259,87 @@ define("info", ["require", "exports", "common"], function (require, exports, com
     }
     exports.log = log;
 });
-define("core", ["require", "exports", "info", "common"], function (require, exports, info_1, common_2) {
+define("web/modules/noder", ["require", "exports", "common"], function (require, exports, core) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    function init() {
-        info_1.log("Main module loaded");
+    var Noder = (function (_super) {
+        __extends(Noder, _super);
+        function Noder() {
+            return _super.call(this) || this;
+        }
+        Noder.prototype.parse = function (entry) {
+            var entries = this.getentries(entry);
+            var self = this;
+            var items = [];
+            core.all(entries, function (it, i) {
+                var factory = self.get(it.tagName);
+                if (factory) {
+                    core.add(items, new ModuleItem(factory, it));
+                }
+            });
+        };
+        Noder.prototype.getentries = function (entry) {
+            var entryEls = entry;
+            if (typeof (entry) == 'string') {
+                entryEls = [];
+                var list = document.querySelectorAll(entry);
+                core.all(list, function (it, i) {
+                    core.add(entryEls, it);
+                });
+            }
+            else if (entry instanceof Array) {
+                entryEls = [];
+                core.all(entry, function (it, i) {
+                    if (typeof (it) == 'string') {
+                        var list = document.querySelectorAll(it);
+                        core.all(list, function (item, idx) {
+                            core.add(entryEls, item);
+                        });
+                    }
+                    else if (it instanceof Array) {
+                        core.all(it, function (item, idx) {
+                            core.add(entryEls, item);
+                        });
+                    }
+                    else {
+                        core.add(entryEls, it);
+                    }
+                });
+            }
+            else {
+                entryEls = [entry];
+            }
+            return entryEls;
+        };
+        return Noder;
+    }(core.NamedFactory));
+    exports.Noder = Noder;
+    var ModuleFactory = (function (_super) {
+        __extends(ModuleFactory, _super);
+        function ModuleFactory(name) {
+            return _super.call(this, name, true) || this;
+        }
+        return ModuleFactory;
+    }(core.NamedObject));
+    exports.ModuleFactory = ModuleFactory;
+    var ModuleItem = (function () {
+        function ModuleItem(factory, target) {
+            this.factory = factory;
+            this.target = target;
+        }
+        return ModuleItem;
+    }());
+    exports.ModuleItem = ModuleItem;
+});
+define("core", ["require", "exports", "info", "common", "web/modules/noder"], function (require, exports, info_1, common_2, noder_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var noder = new noder_1.Noder();
+    function init(callback) {
+        if (callback) {
+            callback(noder);
+        }
+        info_1.log("Core module loaded");
     }
     exports.init = init;
     var w = window;
