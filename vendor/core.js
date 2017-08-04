@@ -325,6 +325,7 @@ define("web/modules/noder", ["require", "exports", "common"], function (require,
             }
             return entryEls;
         };
+        Noder.instance = new Noder();
         return Noder;
     }(core.NamedFactory));
     exports.Noder = Noder;
@@ -354,10 +355,9 @@ define("web/modules/noder", ["require", "exports", "common"], function (require,
 define("core", ["require", "exports", "info", "common", "web/modules/noder"], function (require, exports, info_1, common_2, noder_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var noder = new noder_1.Noder();
     function init(callback) {
         if (callback) {
-            callback(noder);
+            callback(noder_1.Noder.instance);
         }
         info_1.log("Core module loaded");
     }

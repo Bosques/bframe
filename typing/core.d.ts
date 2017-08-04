@@ -43,6 +43,7 @@ declare module "info" {
 declare module "web/modules/noder" {
     import * as core from "common";
     export class Noder extends core.NamedFactory<ModuleFactory> {
+        static readonly instance: Noder;
         constructor();
         parse(entry: any): void;
         parseNode(target: OperationNode): void;
