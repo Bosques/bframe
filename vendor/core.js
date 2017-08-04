@@ -221,22 +221,28 @@ define("common", ["require", "exports"], function (require, exports) {
     }());
     exports.Factory = Factory;
     var NamedFactory = (function () {
-        function NamedFactory() {
+        function NamedFactory(caseSensitive) {
+            this.caseSensitive = caseSensitive;
             this.cache = {};
         }
         NamedFactory.prototype.regist = function (item) {
-            this.cache[item.name] = item;
+            var name = item.name;
+            if (!this.caseSensitive) {
+                name = name.toLowerCase();
+            }
+            this.cache[name] = item;
         };
         NamedFactory.prototype.get = function (name) {
-            return this.cache[name];
+            var n = (!this.caseSensitive) ? name.toLowerCase() : name;
+            return this.cache[n];
         };
         return NamedFactory;
     }());
     exports.NamedFactory = NamedFactory;
     var NamedObject = (function () {
-        function NamedObject(name, ignoreCase) {
-            this.ignoreCase = ignoreCase;
-            this._name = ignoreCase ? name.toLowerCase() : name;
+        function NamedObject(name, caseSensitive) {
+            this.caseSensitive = caseSensitive;
+            this._name = caseSensitive ? name : name.toLowerCase();
         }
         Object.defineProperty(NamedObject.prototype, "name", {
             get: function () {
@@ -265,18 +271,26 @@ define("web/modules/noder", ["require", "exports", "common"], function (require,
     var Noder = (function (_super) {
         __extends(Noder, _super);
         function Noder() {
-            return _super.call(this) || this;
+            return _super.call(this, true) || this;
         }
         Noder.prototype.parse = function (entry) {
             var entries = this.getentries(entry);
             var self = this;
-            var items = [];
             core.all(entries, function (it, i) {
-                var factory = self.get(it.tagName);
-                if (factory) {
-                    core.add(items, new ModuleItem(factory, it));
-                }
+                self.parseNode(it);
             });
+        };
+        Noder.prototype.parseNode = function (target) {
+            var self = this;
+            var factory = self.get(target.nodeName);
+            if (factory) {
+                var mi = new ModuleItem(factory, target);
+                mi.prepare();
+                core.all(target.childNodes, function (item, i) {
+                    self.parseNode(item);
+                });
+                mi.prepare();
+            }
         };
         Noder.prototype.getentries = function (entry) {
             var entryEls = entry;
@@ -317,7 +331,7 @@ define("web/modules/noder", ["require", "exports", "common"], function (require,
     var ModuleFactory = (function (_super) {
         __extends(ModuleFactory, _super);
         function ModuleFactory(name) {
-            return _super.call(this, name, true) || this;
+            return _super.call(this, name) || this;
         }
         return ModuleFactory;
     }(core.NamedObject));
@@ -327,6 +341,12 @@ define("web/modules/noder", ["require", "exports", "common"], function (require,
             this.factory = factory;
             this.target = target;
         }
+        ModuleItem.prototype.prepare = function () {
+            this.factory.prepare(this.target);
+        };
+        ModuleItem.prototype.process = function () {
+            this.factory.process(this.target);
+        };
         return ModuleItem;
     }());
     exports.ModuleItem = ModuleItem;

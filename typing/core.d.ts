@@ -24,15 +24,17 @@ declare module "common" {
         regist(item: T): void;
     }
     export class NamedFactory<T extends NamedObject> {
+        protected caseSensitive: boolean;
         protected cache: any;
+        constructor(caseSensitive?: boolean);
         regist(item: T): void;
         get(name: string): any;
     }
     export class NamedObject {
-        protected ignoreCase: boolean;
+        protected caseSensitive: boolean;
         protected _name: string;
         readonly name: string;
-        constructor(name: string, ignoreCase?: boolean);
+        constructor(name: string, caseSensitive?: boolean);
     }
 }
 declare module "info" {
@@ -43,15 +45,22 @@ declare module "web/modules/noder" {
     export class Noder extends core.NamedFactory<ModuleFactory> {
         constructor();
         parse(entry: any): void;
+        parseNode(target: OperationNode): void;
         protected getentries(entry: any): any;
     }
-    export class ModuleFactory extends core.NamedObject {
+    export abstract class ModuleFactory extends core.NamedObject {
         constructor(name: string);
+        abstract prepare(target: OperationNode): void;
+        abstract process(target: OperationNode): void;
     }
     export class ModuleItem {
         factory: ModuleFactory;
-        target: Element;
-        constructor(factory: ModuleFactory, target: Element);
+        target: OperationNode;
+        constructor(factory: ModuleFactory, target: OperationNode);
+        prepare(): void;
+        process(): void;
+    }
+    export interface OperationNode extends Node {
     }
 }
 declare module "core" {
