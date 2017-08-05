@@ -19,6 +19,7 @@ declare module "common" {
     export function add(target: any, item: any, isunique?: any): any;
     export function addrange(target: any[], items: any[]): void;
     export function diff(a: Date, b: Date, mode?: number): number;
+    export function is(target: any, type: any): boolean;
     export class Factory<T> {
         protected list: T[];
         regist(item: T): void;
@@ -40,28 +41,75 @@ declare module "common" {
 declare module "info" {
     export function log(msg: string): void;
 }
+declare module "web/modules/operationode" {
+    import { Module } from "web/modules/modulefactory";
+    export class OperationNode extends Node {
+        static check(node: OperationNode, parent?: OperationNode): boolean;
+        md: Module;
+        cs: Cursor;
+        scope: OperationScope;
+        setalias(alias: string, group?: boolean): void;
+        setchild(node: OperationNode): void;
+    }
+    export class OperationScope {
+        protected readonly $parent: OperationScope;
+        static check(target: OperationNode, parent?: OperationNode): void;
+        constructor($parent?: OperationScope);
+    }
+    export class Cursor {
+        root: OperationNode;
+        readonly childunit: OperationNode;
+        unit: OperationNode;
+        parent: OperationNode;
+        target: OperationNode;
+        constructor();
+        static check(target: OperationNode): void;
+    }
+}
+declare module "web/elements" {
+    export function addcss(target: any, name: string): void;
+    export function delcss(target: any, name: string): void;
+    export function destroy(target: Node): void;
+    export function evtarget(event: Event, callback?: Function): any;
+    export function make(html: string): Node;
+    export function create(html: string, multiple?: boolean): Node;
+    export function astyle(styles: any, val?: any): any;
+}
+declare module "web/modules/modulefactory" {
+    import * as core from "common";
+    import { OperationNode } from "web/modules/operationode";
+    export abstract class ModuleFactory extends core.NamedObject {
+        constructor(name: string);
+        abstract create(target: ModuleTemplate): Module;
+        abstract process(target: ModuleTemplate): void;
+    }
+    export interface ModuleTemplate {
+        readonly tag: string;
+    }
+    export abstract class Module {
+        protected parent: Module;
+        constructor();
+        abstract setup(): void;
+        setparent(parent: Module): void;
+        abstract setchild(child: Module): void;
+    }
+    export abstract class NodeModule extends Module {
+        constructor();
+        render(parentEl: OperationNode): void;
+        abstract dorender(): string;
+    }
+}
 declare module "web/modules/noder" {
     import * as core from "common";
+    import { ModuleFactory } from "web/modules/modulefactory";
+    import { OperationNode } from "web/modules/operationode";
     export class Noder extends core.NamedFactory<ModuleFactory> {
         static readonly instance: Noder;
         constructor();
         parse(entry: any): void;
-        parseNode(target: OperationNode): void;
+        private getfactoryname(nodename);
+        parseNode(target: OperationNode, parentNode?: OperationNode): void;
         protected getentries(entry: any): any;
-    }
-    export abstract class ModuleFactory extends core.NamedObject {
-        constructor(name: string);
-        abstract prepare(target: OperationNode): void;
-        abstract process(target: OperationNode): void;
-    }
-    export class ModuleItem {
-        factory: ModuleFactory;
-        target: OperationNode;
-        constructor(factory: ModuleFactory, target: OperationNode);
-        prepare(): void;
-        process(): void;
-    }
-    export interface OperationNode extends Node {
     }
 }
 declare module "core" {

@@ -210,6 +210,10 @@ define("common", ["require", "exports"], function (require, exports) {
         return Math.floor(d / m);
     }
     exports.diff = diff;
+    function is(target, type) {
+        return target instanceof type;
+    }
+    exports.is = is;
     var Factory = (function () {
         function Factory() {
             this.list = [];
@@ -265,7 +269,214 @@ define("info", ["require", "exports", "common"], function (require, exports, com
     }
     exports.log = log;
 });
-define("web/modules/noder", ["require", "exports", "common"], function (require, exports, core) {
+define("web/modules/operationode", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var OperationNode = (function (_super) {
+        __extends(OperationNode, _super);
+        function OperationNode() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        OperationNode.check = function (node, parent) {
+            if (node.nodeName.indexOf('#') < 0) {
+                Cursor.check(node);
+                return true;
+            }
+            return false;
+        };
+        OperationNode.prototype.setalias = function (alias, group) {
+            var u = this.cs.unit;
+            u["$" + alias] = this;
+            if (group) {
+                this.scope = new OperationScope(this.scope);
+            }
+        };
+        OperationNode.prototype.setchild = function (node) {
+            node.cs.parent = this;
+            node.cs.root = this.cs.root;
+            node.cs.unit = this.cs.childunit;
+            this.md.setchild(node.md);
+        };
+        return OperationNode;
+    }(Node));
+    exports.OperationNode = OperationNode;
+    var OperationScope = (function () {
+        function OperationScope($parent) {
+            this.$parent = $parent;
+        }
+        OperationScope.check = function (target, parent) {
+            if (target) {
+                if (!target.scope && parent.scope) {
+                    target.scope = parent.scope;
+                }
+                else if (!target.scope && parent && !parent.scope) {
+                    // Parent should always have a scope.
+                    debugger;
+                }
+                else {
+                    target.scope = new OperationScope();
+                }
+            }
+        };
+        return OperationScope;
+    }());
+    exports.OperationScope = OperationScope;
+    var Cursor = (function () {
+        function Cursor() {
+        }
+        Object.defineProperty(Cursor.prototype, "childunit", {
+            get: function () {
+                var t = this.target;
+                var at = t.getAttribute('alias');
+                if (at) {
+                    return this.target;
+                }
+                return this.unit || this.target;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Cursor.check = function (target) {
+            if (!target.cs) {
+                var cs = new Cursor();
+                cs.target = target;
+                target.cs = cs;
+            }
+        };
+        return Cursor;
+    }());
+    exports.Cursor = Cursor;
+});
+define("web/elements", ["require", "exports", "common"], function (require, exports, common_2) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function addcss(target, name) {
+        var classes = target.className.trim();
+        if (classes.indexOf(name) != 0 && classes.indexOf(' ' + name) < 0) {
+            var s = classes + " " + name;
+            target.className = s;
+        }
+    }
+    exports.addcss = addcss;
+    function delcss(target, name) {
+        var classes = target.className.trim();
+        if (classes.indexOf(name) == 0 || classes.indexOf(' ' + name) >= 0) {
+            var s = classes.replace(name, '');
+            target.className = s;
+        }
+    }
+    exports.delcss = delcss;
+    function destroy(target) {
+        var b = document.body;
+        if (!b.$destroyer$) {
+            b.$destroyer$ = document.createElement('div');
+        }
+        if (!target) {
+            return;
+        }
+        common_2.all(target, function (item, i) {
+            if (common_2.starts(i, ['$', '_'])) {
+                item[i] = null;
+            }
+        });
+        var d = b.$destroyer$;
+        d.appendChild(target);
+        d.innerHTML = '';
+    }
+    exports.destroy = destroy;
+    function evtarget(event, callback) {
+        var el = event.target || event.srcElement;
+        if (callback) {
+            return callback(el);
+        }
+        return el;
+    }
+    exports.evtarget = evtarget;
+    function make(html) {
+        var d = document;
+        if (!d.$tmp$) {
+            d.$tmp$ = document.createElement('div');
+        }
+        var t = d.$tmp$;
+        t.className = 'child-wrap';
+        t.innerHTML = html;
+        if (t.childNodes.length > 1) {
+            d.$tmp$ = null;
+            return t;
+        }
+        return t.firstChild;
+    }
+    exports.make = make;
+    function create(html, multiple) {
+        var b = document.body;
+        if (!b.$creator$) {
+            b.$creator$ = document.createElement('div');
+        }
+        var div = b.$creator$;
+        div.innerHTML = html;
+        var rlt = [];
+        common_2.all(div.childNodes, function (n, i) {
+            common_2.add(rlt, n);
+        });
+        div.innerHTML = '';
+        return multiple ? rlt : rlt[0];
+    }
+    exports.create = create;
+    function astyle(styles, val) {
+        var style = null;
+        var props = (styles instanceof Array) ? styles : [styles];
+        var el = this;
+        var compStyle = window.getComputedStyle(el, null);
+        for (var i = 0; i < props.length; i++) {
+            style = compStyle.getPropertyValue(props[i]);
+            if (style != null) {
+                break;
+            }
+        }
+        if (val !== undefined) {
+            return style == val;
+        }
+        return style;
+    }
+    exports.astyle = astyle;
+    ;
+});
+define("web/modules/modulefactory", ["require", "exports", "common", "web/elements"], function (require, exports, core, nodes) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var ModuleFactory = (function (_super) {
+        __extends(ModuleFactory, _super);
+        function ModuleFactory(name) {
+            return _super.call(this, name) || this;
+        }
+        return ModuleFactory;
+    }(core.NamedObject));
+    exports.ModuleFactory = ModuleFactory;
+    var Module = (function () {
+        function Module() {
+        }
+        Module.prototype.setparent = function (parent) {
+            this.parent = parent;
+            parent.setchild(this);
+        };
+        return Module;
+    }());
+    exports.Module = Module;
+    var NodeModule = (function (_super) {
+        __extends(NodeModule, _super);
+        function NodeModule() {
+            return _super.call(this) || this;
+        }
+        NodeModule.prototype.render = function (parentEl) {
+            var html = this.dorender();
+            var node = nodes.make(html);
+            parentEl.appendChild(node);
+        };
+        return NodeModule;
+    }(Module));
+    exports.NodeModule = NodeModule;
+});
+define("web/modules/noder", ["require", "exports", "common", "web/modules/modulefactory", "web/modules/operationode"], function (require, exports, core, modulefactory_1, operationode_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Noder = (function (_super) {
@@ -280,16 +491,52 @@ define("web/modules/noder", ["require", "exports", "common"], function (require,
                 self.parseNode(it);
             });
         };
-        Noder.prototype.parseNode = function (target) {
+        Noder.prototype.getfactoryname = function (nodename) {
+            if (nodename && nodename.indexOf('.') > 0) {
+                var list = nodename.split('.');
+                return { f: list[0], m: list.length > 1 ? list[1] : '' };
+            }
+            return { f: nodename, m: nodename };
+        };
+        Noder.prototype.parseNode = function (target, parentNode) {
+            operationode_1.OperationNode.check(target, parentNode);
             var self = this;
-            var factory = self.get(target.nodeName);
+            var r = self.getfactoryname(target.nodeName);
+            var factory = self.get(r.f);
             if (factory) {
-                var mi = new ModuleItem(factory, target);
-                mi.prepare();
-                core.all(target.childNodes, function (item, i) {
-                    self.parseNode(item);
+                var template_1 = { tag: r.m };
+                var alias_1 = undefined;
+                var group_1 = false;
+                core.all(target.attributes, function (attr, i) {
+                    if (attr.nodeName == 'alias') {
+                        alias_1 = attr.nodeValue;
+                    }
+                    else if (attr.nodeName == 'group') {
+                        alias_1 = attr.nodeValue;
+                        group_1 = true;
+                    }
+                    else {
+                        template_1[attr.nodeName] = attr.nodeValue;
+                    }
                 });
-                mi.prepare();
+                var md = factory.create(template_1);
+                if (md) {
+                    target.md = md;
+                    if (parentNode) {
+                        parentNode.setchild(target);
+                    }
+                    if (alias_1) {
+                        target.setalias(alias_1, group_1);
+                    }
+                    if (core.is(md, modulefactory_1.NodeModule)) {
+                        var ndmodule = md;
+                        ndmodule.render(target);
+                    }
+                    core.all(target.childNodes, function (item, i) {
+                        self.parseNode(item, target);
+                    });
+                    md.setup();
+                }
             }
         };
         Noder.prototype.getentries = function (entry) {
@@ -329,30 +576,8 @@ define("web/modules/noder", ["require", "exports", "common"], function (require,
         return Noder;
     }(core.NamedFactory));
     exports.Noder = Noder;
-    var ModuleFactory = (function (_super) {
-        __extends(ModuleFactory, _super);
-        function ModuleFactory(name) {
-            return _super.call(this, name) || this;
-        }
-        return ModuleFactory;
-    }(core.NamedObject));
-    exports.ModuleFactory = ModuleFactory;
-    var ModuleItem = (function () {
-        function ModuleItem(factory, target) {
-            this.factory = factory;
-            this.target = target;
-        }
-        ModuleItem.prototype.prepare = function () {
-            this.factory.prepare(this.target);
-        };
-        ModuleItem.prototype.process = function () {
-            this.factory.process(this.target);
-        };
-        return ModuleItem;
-    }());
-    exports.ModuleItem = ModuleItem;
 });
-define("core", ["require", "exports", "info", "common", "web/modules/noder"], function (require, exports, info_1, common_2, noder_1) {
+define("core", ["require", "exports", "info", "common", "web/modules/noder"], function (require, exports, info_1, common_3, noder_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function init(callback) {
@@ -364,5 +589,5 @@ define("core", ["require", "exports", "info", "common", "web/modules/noder"], fu
     exports.init = init;
     var w = window;
     w.test = [];
-    common_2.add(w.test, 'success');
+    common_3.add(w.test, 'success');
 });
