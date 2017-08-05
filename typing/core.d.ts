@@ -42,7 +42,7 @@ declare module "info" {
     export function log(msg: string): void;
 }
 declare module "web/modules/operationode" {
-    import { Module } from "web/modules/modulefactory";
+    import { Module } from "ModuleFactories";
     export class OperationNode extends Node {
         static check(node: OperationNode, parent?: OperationNode): boolean;
         md: Module;
@@ -75,7 +75,7 @@ declare module "web/elements" {
     export function create(html: string, multiple?: boolean): Node;
     export function astyle(styles: any, val?: any): any;
 }
-declare module "web/modules/modulefactory" {
+declare module "ModuleFactories" {
     import * as core from "common";
     import { OperationNode } from "web/modules/operationode";
     export abstract class ModuleFactory extends core.NamedObject {
@@ -101,7 +101,7 @@ declare module "web/modules/modulefactory" {
 }
 declare module "web/modules/noder" {
     import * as core from "common";
-    import { ModuleFactory } from "web/modules/modulefactory";
+    import { ModuleFactory } from "ModuleFactories";
     import { OperationNode } from "web/modules/operationode";
     export class Noder extends core.NamedFactory<ModuleFactory> {
         static readonly instance: Noder;

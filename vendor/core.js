@@ -441,7 +441,8 @@ define("web/elements", ["require", "exports", "common"], function (require, expo
     exports.astyle = astyle;
     ;
 });
-define("web/modules/modulefactory", ["require", "exports", "common", "web/elements"], function (require, exports, core, nodes) {
+///<amd-module name="ModuleFactories"/>
+define("ModuleFactories", ["require", "exports", "common", "web/elements"], function (require, exports, core, nodes) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var ModuleFactory = (function (_super) {
@@ -476,7 +477,7 @@ define("web/modules/modulefactory", ["require", "exports", "common", "web/elemen
     }(Module));
     exports.NodeModule = NodeModule;
 });
-define("web/modules/noder", ["require", "exports", "common", "web/modules/modulefactory", "web/modules/operationode"], function (require, exports, core, modulefactory_1, operationode_1) {
+define("web/modules/noder", ["require", "exports", "common", "ModuleFactories", "web/modules/operationode"], function (require, exports, core, modulefactory_1, operationode_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Noder = (function (_super) {

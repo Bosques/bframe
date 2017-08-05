@@ -14,7 +14,8 @@
         "target": "es5",
         "noImplicitAny": true,
         "typeRoots": [
-            "node_modules/@types"
+            "typing"
+            ,"node_modules/@types"
         ],
         "allowSyntheticDefaultImports": true,
         "lib": [
@@ -30,6 +31,7 @@
         "node_modules"
     ]
     ,"include":[
-        "./typing/*.ts"
+        "./typing/core.d.ts"
+        ,"./typing/babylon.d.ts"
     ]
 }
