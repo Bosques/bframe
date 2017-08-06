@@ -31,7 +31,6 @@
         "node_modules"
     ]
     ,"include":[
-        "./typing/core.d.ts"
-        ,"./typing/babylon.d.ts"
+        "./typings/index.d.ts"
     ]
 }

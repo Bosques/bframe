@@ -1,8 +1,0 @@
-{
-  "name": "bosques-core",
-  "dependencies": {},
-  "globalDependencies": {
-    "babylonjs": "registry:dt/babylonjs#2.3.0+20160513001857"
-    ,"core": "./typing/core.d.ts"
-  }
-}

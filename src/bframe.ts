@@ -1,16 +1,20 @@
 import * as core from 'common';
 import * as info from 'info';
+import {Noder} from 'web/modules/noder';
+import {BabyFactory, WorldModule} from './babyfactory';
 
 export function init(){
-    info.log("Bframe module loaded");
-
-    let bframe = new BFrame(document.body);
+    BabyFactory.instance.regist(new WorldModule());
+    Noder.instance.regist(BabyFactory.instance);
+    Noder.instance.parse(document.body);
+    //let bframe = new BFrame(document.body);
 
     // Create the scene
-    bframe.createScene();
+    //bframe.createScene();
 
     // start animation
-    bframe.animate();
+    //bframe.animate();
+    info.log("Bframe module loaded");
 }
 
 class BFrame {
