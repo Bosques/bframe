@@ -418,8 +418,10 @@ define("web/modules/module", ["require", "exports", "common", "cursor", "web/ele
         };
         Module.prototype.setalias = function (alias, group) {
             this.alias = alias;
-            var u = this.cs.childunit;
-            u["$" + alias] = this;
+            var u = this.cs.unit;
+            if (u) {
+                u["$" + alias] = this;
+            }
             if (group) {
                 this.scope = new modulescope_1.ModuleScope(this.scope);
             }
@@ -481,7 +483,9 @@ define("web/modules/operationode", ["require", "exports", "cursor"], function (r
                 node.setalias = function (alias, group) {
                     var cs = this.cs;
                     var u = cs.unit;
-                    u["$" + alias] = this;
+                    if (u) {
+                        u["$" + alias] = this;
+                    }
                     if (group) {
                         var self_1 = this;
                         self_1._scope = new OperationScope(self_1._scope);
