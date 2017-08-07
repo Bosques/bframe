@@ -52,17 +52,7 @@ declare module "cursor" {
         static check<T extends {
             cs: any;
         }>(target: T): void;
-    }
-}
-declare module "web/modules/operationode" {
-    import { Module, ModuleScope } from "web/modules/modulefactory";
-    import { Cursor } from "cursor";
-    export abstract class OperationNode extends Element {
-        static check(node: OperationNode, parent?: OperationNode): boolean;
-        md: Module;
-        abstract cs(): Cursor<OperationNode>;
-        abstract scope(): ModuleScope;
-        abstract setalias(alias: string): void;
+        setparent(pcs?: Cursor<T>): void;
     }
 }
 declare module "web/elements" {
@@ -74,30 +64,16 @@ declare module "web/elements" {
     export function create(html: string, multiple?: boolean): Node;
     export function astyle(styles: any, val?: any): any;
 }
-declare module "web/modules/modulefactory" {
-    import * as core from "common";
+declare module "web/modules/module" {
     import { OperationNode } from "web/modules/operationode";
     import { Cursor } from "cursor";
-    export abstract class ModuleFactory extends core.NamedFactory<Module> implements core.NamedObject {
-        readonly name: string;
-        constructor(name: string);
-        abstract create(target: ModuleTemplate): Module;
-        abstract process(target: ModuleTemplate): void;
-    }
-    export interface ModuleTemplate {
-        readonly tag: string;
-    }
-    export class ModuleScope {
-        protected readonly $parent: ModuleScope;
-        static check(target: Module, parent?: Module): void;
-        constructor($parent?: ModuleScope);
-    }
+    import { ModuleScope } from "web/modules/modulescope";
     export abstract class Module {
         readonly name: string;
         cs: Cursor<Module>;
         scope: ModuleScope;
         $ref: any;
-        protected parent: Module;
+        alias: string;
         constructor(name: string);
         setparent(parent: Module): void;
         setalias(alias: string, group?: boolean): void;
@@ -109,16 +85,60 @@ declare module "web/modules/modulefactory" {
         abstract dorender(): string;
     }
 }
+declare module "web/modules/modulescope" {
+    import { Module } from "web/modules/module";
+    export class ModuleScope {
+        protected readonly $parent: ModuleScope;
+        static check(target: Module, parent?: Module): void;
+        constructor($parent?: ModuleScope);
+    }
+}
+declare module "web/modules/operationode" {
+    import { Module } from "web/modules/module";
+    import { Cursor } from "cursor";
+    export abstract class OperationNode extends Element {
+        static check(node: OperationNode, parent?: OperationNode): boolean;
+        md: Module;
+        protected _scope: OperationScope;
+        cs: Cursor<OperationNode>;
+        abstract scope(scope?: OperationScope): OperationScope;
+        abstract setalias(alias: string, group?: boolean): void;
+        abstract setparent(parent: OperationNode): void;
+    }
+    export class OperationScope {
+        protected readonly $parent: OperationScope;
+        static check(target: OperationNode, parent?: OperationNode): void;
+        constructor($parent?: OperationScope);
+    }
+}
+declare module "web/modules/modulefactory" {
+    import * as core from "common";
+    import { Module } from "web/modules/module";
+    export abstract class ModuleFactory extends core.NamedFactory<Module> implements core.NamedObject {
+        readonly name: string;
+        constructor(name: string);
+        abstract create(target: ModuleTemplate): Module;
+        abstract process(target: ModuleTemplate): void;
+    }
+    export interface ModuleTemplate {
+        readonly tag: string;
+    }
+}
 declare module "web/modules/noder" {
     import * as core from "common";
-    import { ModuleFactory, Module } from "web/modules/modulefactory";
+    import { ModuleFactory } from "web/modules/modulefactory";
     import { OperationNode } from "web/modules/operationode";
     export class Noder extends core.NamedFactory<ModuleFactory> {
         static readonly instance: Noder;
         constructor();
         parse(entry: any): void;
         private getfactoryname(nodename);
-        parseNode(target: OperationNode, parent?: Module): void;
+        createmplate(target: OperationNode, name: string): {
+            template: any;
+            alias: any;
+            group: boolean;
+        };
+        parseNode(target: OperationNode, parentNode?: OperationNode): void;
         protected getentries(entry: any): any;
     }
 }

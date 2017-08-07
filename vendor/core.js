@@ -274,7 +274,7 @@ define("cursor", ["require", "exports"], function (require, exports) {
         Object.defineProperty(Cursor.prototype, "childunit", {
             get: function () {
                 var t = this.target;
-                var at = t.getAttribute('alias');
+                var at = t['alias'] || t.getAttribute('alias');
                 if (at) {
                     return this.target;
                 }
@@ -290,38 +290,16 @@ define("cursor", ["require", "exports"], function (require, exports) {
                 target.cs = cs;
             }
         };
+        Cursor.prototype.setparent = function (pcs) {
+            if (pcs) {
+                this.parent = pcs.target;
+                this.root = pcs.root || pcs.target;
+                this.unit = pcs.childunit;
+            }
+        };
         return Cursor;
     }());
     exports.Cursor = Cursor;
-});
-define("web/modules/operationode", ["require", "exports", "cursor"], function (require, exports, cursor_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var OperationNode = (function (_super) {
-        __extends(OperationNode, _super);
-        function OperationNode() {
-            return _super !== null && _super.apply(this, arguments) || this;
-        }
-        OperationNode.check = function (node, parent) {
-            if (node.nodeName.indexOf('#') < 0) {
-                cursor_1.Cursor.check(node);
-                node.setalias = function (alias) {
-                    var u = this.cs().unit;
-                    u["$" + alias] = this;
-                };
-                node.cs = function () {
-                    return this.cs;
-                };
-                node.scope = function () {
-                    return this.md.scope;
-                };
-                return true;
-            }
-            return false;
-        };
-        return OperationNode;
-    }(Element));
-    exports.OperationNode = OperationNode;
 });
 define("web/elements", ["require", "exports", "common"], function (require, exports, common_2) {
     "use strict";
@@ -417,21 +395,56 @@ define("web/elements", ["require", "exports", "common"], function (require, expo
     exports.astyle = astyle;
     ;
 });
-////<amd-module name="ModuleFactories"/>
-define("web/modules/modulefactory", ["require", "exports", "common", "cursor", "web/elements"], function (require, exports, core, cursor_2, nodes) {
+define("web/modules/module", ["require", "exports", "common", "cursor", "web/elements", "web/modules/modulescope"], function (require, exports, core, cursor_1, nodes, modulescope_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var ModuleFactory = (function (_super) {
-        __extends(ModuleFactory, _super);
-        function ModuleFactory(name) {
-            var _this = _super.call(this) || this;
-            _this.name = name;
+    var Module = (function () {
+        function Module(name) {
+            this.name = name;
             name = name.toLowerCase();
-            return _this;
+            //this.cs = new Cursor<Module>();
+            cursor_1.Cursor.check(this);
+            this.scope = new modulescope_1.ModuleScope();
         }
-        return ModuleFactory;
-    }(core.NamedFactory));
-    exports.ModuleFactory = ModuleFactory;
+        Module.prototype.setparent = function (parent) {
+            var cs = this.cs;
+            if (parent) {
+                var pcs = parent.cs;
+                cs.setparent(pcs);
+                this.scope = parent.scope;
+                //parent.setchild(this);
+                core.trigger(parent, 'child', [this]);
+            }
+        };
+        Module.prototype.setalias = function (alias, group) {
+            this.alias = alias;
+            var u = this.cs.childunit;
+            u["$" + alias] = this;
+            if (group) {
+                this.scope = new modulescope_1.ModuleScope(this.scope);
+            }
+        };
+        return Module;
+    }());
+    exports.Module = Module;
+    var NodeModule = (function (_super) {
+        __extends(NodeModule, _super);
+        function NodeModule(name) {
+            return _super.call(this, name) || this;
+        }
+        NodeModule.prototype.render = function (parentEl) {
+            var html = this.dorender();
+            var node = nodes.make(html);
+            parentEl.appendChild(node);
+            return node;
+        };
+        return NodeModule;
+    }(Module));
+    exports.NodeModule = NodeModule;
+});
+define("web/modules/modulescope", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
     var ModuleScope = (function () {
         function ModuleScope($parent) {
             this.$parent = $parent;
@@ -453,45 +466,94 @@ define("web/modules/modulefactory", ["require", "exports", "common", "cursor", "
         return ModuleScope;
     }());
     exports.ModuleScope = ModuleScope;
-    var Module = (function () {
-        function Module(name) {
-            this.name = name;
-            name = name.toLowerCase();
-            this.cs = new cursor_2.Cursor();
-            this.scope = new ModuleScope();
+});
+define("web/modules/operationode", ["require", "exports", "cursor"], function (require, exports, cursor_2) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var OperationNode = (function (_super) {
+        __extends(OperationNode, _super);
+        function OperationNode() {
+            return _super !== null && _super.apply(this, arguments) || this;
         }
-        Module.prototype.setparent = function (parent) {
-            this.parent = parent;
-            this.scope = parent.scope;
-            //parent.setchild(this);
-            core.trigger(parent, 'child', [this]);
+        OperationNode.check = function (node, parent) {
+            if (node.nodeName.indexOf('#') < 0) {
+                cursor_2.Cursor.check(node);
+                node.setalias = function (alias, group) {
+                    var cs = this.cs;
+                    var u = cs.unit;
+                    u["$" + alias] = this;
+                    if (group) {
+                        var self_1 = this;
+                        self_1._scope = new OperationScope(self_1._scope);
+                    }
+                };
+                node.setparent = function (parent) {
+                    var self = this;
+                    var cs = self.cs;
+                    if (parent) {
+                        var pcs = parent.cs;
+                        cs.setparent(pcs);
+                        self._scope = parent.scope;
+                    }
+                };
+                node.scope = function (scope) {
+                    var self = this;
+                    if (scope) {
+                        self._scope = scope;
+                    }
+                    return self._scope;
+                };
+                if (parent) {
+                    node.setparent(parent);
+                }
+                return true;
+            }
+            return false;
         };
-        Module.prototype.setalias = function (alias, group) {
-            var u = this.cs.unit;
-            u["$" + alias] = this;
-            if (group) {
-                this.scope = new ModuleScope(this.scope);
+        return OperationNode;
+    }(Element));
+    exports.OperationNode = OperationNode;
+    var OperationScope = (function () {
+        function OperationScope($parent) {
+            this.$parent = $parent;
+        }
+        OperationScope.check = function (target, parent) {
+            if (target) {
+                if (!target.scope()) {
+                    if (!parent) {
+                        target.scope(new OperationScope());
+                    }
+                    else if (parent.scope()) {
+                        target.scope(parent.scope());
+                    }
+                    else {
+                        console.log('Parent should always has scope');
+                        debugger;
+                    }
+                }
             }
         };
-        return Module;
+        return OperationScope;
     }());
-    exports.Module = Module;
-    var NodeModule = (function (_super) {
-        __extends(NodeModule, _super);
-        function NodeModule(name) {
-            return _super.call(this, name) || this;
-        }
-        NodeModule.prototype.render = function (parentEl) {
-            var html = this.dorender();
-            var node = nodes.make(html);
-            parentEl.appendChild(node);
-            return node;
-        };
-        return NodeModule;
-    }(Module));
-    exports.NodeModule = NodeModule;
+    exports.OperationScope = OperationScope;
 });
-define("web/modules/noder", ["require", "exports", "common", "web/modules/modulefactory", "web/modules/operationode"], function (require, exports, core, modulefactory_1, operationode_1) {
+////<amd-module name="ModuleFactories"/>
+define("web/modules/modulefactory", ["require", "exports", "common"], function (require, exports, core) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var ModuleFactory = (function (_super) {
+        __extends(ModuleFactory, _super);
+        function ModuleFactory(name) {
+            var _this = _super.call(this) || this;
+            _this.name = name;
+            name = name.toLowerCase();
+            return _this;
+        }
+        return ModuleFactory;
+    }(core.NamedFactory));
+    exports.ModuleFactory = ModuleFactory;
+});
+define("web/modules/noder", ["require", "exports", "common", "web/modules/operationode", "web/modules/module"], function (require, exports, core, operationode_1, module_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Noder = (function (_super) {
@@ -513,66 +575,60 @@ define("web/modules/noder", ["require", "exports", "common", "web/modules/module
             }
             return { f: nodename, m: nodename };
         };
-        Noder.prototype.parseNode = function (target, parent) {
-            operationode_1.OperationNode.check(target);
+        Noder.prototype.createmplate = function (target, name) {
+            var template = { tag: name };
+            var alias = undefined;
+            var group = false;
+            core.all(target.attributes, function (attr, i) {
+                if (attr.nodeName == 'alias') {
+                    alias = attr.nodeValue;
+                }
+                else if (attr.nodeName == 'group') {
+                    alias = attr.nodeValue;
+                    group = true;
+                }
+                else {
+                    template[attr.nodeName] = attr.nodeValue;
+                }
+            });
+            return { template: template, alias: alias, group: group };
+        };
+        Noder.prototype.parseNode = function (target, parentNode) {
+            operationode_1.OperationNode.check(target, parentNode);
             var self = this;
             var r = self.getfactoryname(target.nodeName);
+            var temp = this.createmplate(target, r.m);
+            if (temp.alias && parentNode) {
+                target.setalias(temp.alias, temp.group);
+            }
             var factory = self.get(r.f);
             if (factory) {
-                var template_1 = { tag: r.m };
-                var alias_1 = undefined;
-                var group_1 = false;
-                core.all(target.attributes, function (attr, i) {
-                    if (attr.nodeName == 'alias') {
-                        alias_1 = attr.nodeValue;
-                    }
-                    else if (attr.nodeName == 'group') {
-                        alias_1 = attr.nodeValue;
-                        group_1 = true;
-                    }
-                    else {
-                        template_1[attr.nodeName] = attr.nodeValue;
-                    }
-                });
-                var md_1 = factory.create(template_1);
-                if (md_1) {
-                    target.md = md_1;
-                    md_1.$ref = target;
+                var md = factory.create(temp.template);
+                if (md) {
+                    target.md = md;
+                    md.$ref = target;
                     if (parent) {
-                        //parentNode.setchild(target);
-                        //parentNode.md.setchild(md);
-                        md_1.setparent(parent);
+                        md.setparent(parentNode.md);
                     }
-                    if (alias_1) {
-                        md_1.setalias(alias_1, group_1);
-                        target.setalias(alias_1);
+                    if (temp.alias) {
+                        md.setalias(temp.alias, temp.group);
                     }
-                    core.trigger(md_1, 'created');
-                    if (core.is(md_1, modulefactory_1.NodeModule)) {
-                        var ndmodule = md_1;
+                    core.trigger(md, 'created');
+                    if (core.is(md, module_1.NodeModule)) {
+                        var ndmodule = md;
                         var node = ndmodule.render(target);
-                        core.trigger(md_1, 'rendered', [node]);
+                        core.trigger(md, 'rendered', [node]);
                     }
                     core.all(target.childNodes, function (item, i) {
-                        self.parseNode(item, md_1);
-                        var el = item;
-                        var alias = el.getAttribute('alias');
-                        if (alias) {
-                            el.setalias(alias);
-                        }
+                        self.parseNode(item, target);
                     });
-                    core.trigger(md_1, 'ready');
+                    core.trigger(md, 'ready');
                 }
             }
             else {
                 core.all(target.childNodes, function (item, i) {
                     if (item.nodeName.indexOf('#') < 0) {
-                        self.parseNode(item);
-                        var el = item;
-                        var alias = el.getAttribute('alias');
-                        if (alias) {
-                            el.setalias(alias);
-                        }
+                        self.parseNode(item, target);
                     }
                 });
             }

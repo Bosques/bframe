@@ -1,5 +1,6 @@
 ///<reference path="../typings/index.d.ts"/>
-import {ModuleFactory, ModuleTemplate, Module, NodeModule} from "web/modules/modulefactory";
+import {ModuleFactory, ModuleTemplate} from "web/modules/modulefactory";
+import {Module, NodeModule} from "web/modules/module";
 import {OperationNode} from "web/modules/operationode";
 
 export class BabyFactory extends ModuleFactory{
