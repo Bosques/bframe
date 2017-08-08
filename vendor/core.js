@@ -232,6 +232,12 @@ define("common", ["require", "exports"], function (require, exports) {
         Factory.prototype.regist = function (item) {
             add(this.list, item);
         };
+        Factory.prototype.registAll = function (items) {
+            var _this = this;
+            all(items, function (it, i) {
+                add(_this.list, it);
+            });
+        };
         return Factory;
     }());
     exports.Factory = Factory;
@@ -246,6 +252,16 @@ define("common", ["require", "exports"], function (require, exports) {
                 name = name.toLowerCase();
             }
             this.cache[name] = item;
+        };
+        NamedFactory.prototype.registAll = function (items) {
+            var _this = this;
+            all(items, function (it, i) {
+                var n = i;
+                if (!_this.caseSensitive) {
+                    n = n.toLowerCase();
+                }
+                _this.cache[n] = it;
+            });
         };
         NamedFactory.prototype.get = function (name) {
             var n = (!this.caseSensitive) ? name.toLowerCase() : name;

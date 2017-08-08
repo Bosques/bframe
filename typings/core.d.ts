@@ -24,12 +24,14 @@ declare module "common" {
     export class Factory<T> {
         protected list: T[];
         regist(item: T): void;
+        registAll(items: T[]): void;
     }
     export class NamedFactory<T extends NamedObject> {
         protected caseSensitive: boolean;
         protected cache: any;
         constructor(caseSensitive?: boolean);
         regist(item: T): void;
+        registAll(items: T[]): void;
         get(name: string): any;
     }
     export interface NamedObject {
