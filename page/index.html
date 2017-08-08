@@ -31,7 +31,9 @@
         <b.scene alias="scn">
             <b.camera alias="cam" type="FreeCamera" target="[0,0,0]" active="1"></b.camera>
             <b.light alias="lht" type="HemisphericLight"></b.light>
-        </b.scene>
+            <b.mesh type="Sphere" name="sphere1" options="{segments:16, diameter:2}"></b.mesh>
+            <b.mesh type="Ground" name="ground1" options="{width:6, height:6, subdivisions:2}"></b.mesh> 
+        </b.scene>  
     </b.world>
 </body>
 
