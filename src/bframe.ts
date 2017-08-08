@@ -1,11 +1,14 @@
 import * as core from 'common';
 import * as info from 'info';
 import {Noder} from 'web/modules/noder';
-import {BabyFactory, WorldModule} from './babyfactory';
+import * as BF from './babyfactory';
 
 export function init(){
-    BabyFactory.instance.regist(new WorldModule());
-    Noder.instance.regist(BabyFactory.instance);
+    BF.BabyFactory.instance.regist(new BF.WorldModule());
+    BF.BabyFactory.instance.regist(new BF.SceneModule());
+    BF.BabyFactory.instance.regist(new BF.LightModule());
+    BF.BabyFactory.instance.regist(new BF.CameraModule());
+    Noder.instance.regist(BF.BabyFactory.instance);
     Noder.instance.parse(document.body);
     //let bframe = new BFrame(document.body);
 

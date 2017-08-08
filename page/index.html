@@ -27,7 +27,12 @@
 </head>
 
 <body class="w nb">
-    <b.world alias="world"></b.world>
+    <b.world alias="world">
+        <b.scene alias="scn">
+            <b.camera alias="cam" type="FreeCamera" target="[0,0,0]" active="1"></b.camera>
+            <b.light alias="lht" type="HemisphericLight"></b.light>
+        </b.scene>
+    </b.world>
 </body>
 
 </html>

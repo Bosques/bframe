@@ -401,6 +401,7 @@ define("web/modules/module", ["require", "exports", "common", "cursor", "web/ele
     var Module = (function () {
         function Module(name) {
             this.name = name;
+            this.$props = {};
             name = name.toLowerCase();
             //this.cs = new Cursor<Module>();
             cursor_1.Cursor.check(this);
@@ -553,6 +554,11 @@ define("web/modules/modulefactory", ["require", "exports", "common"], function (
             name = name.toLowerCase();
             return _this;
         }
+        ModuleFactory.prototype.create = function (target) {
+            var rlt = this.docreate(target);
+            core.extend(rlt.$props, target, { tag: true });
+            return rlt;
+        };
         return ModuleFactory;
     }(core.NamedFactory));
     exports.ModuleFactory = ModuleFactory;
@@ -617,16 +623,16 @@ define("web/modules/noder", ["require", "exports", "common", "web/modules/operat
                     if (temp.alias) {
                         md.setalias(temp.alias, temp.group);
                     }
-                    core.trigger(md, 'created');
                     if (core.is(md, module_1.NodeModule)) {
                         var ndmodule = md;
                         var node = ndmodule.render(target);
                         core.trigger(md, 'rendered', [node]);
                     }
+                    core.trigger(md, 'created', [parentNode ? parentNode.md : null]);
                     core.all(target.childNodes, function (item, i) {
                         self.parseNode(item, target);
                     });
-                    core.trigger(md, 'ready');
+                    core.trigger(md, 'ready', [parentNode ? parentNode.md : null]);
                 }
             }
             else {

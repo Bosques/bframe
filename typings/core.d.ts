@@ -67,13 +67,14 @@ declare module "web/elements" {
 declare module "web/modules/module" {
     import { OperationNode } from "web/modules/operationode";
     import { Cursor } from "cursor";
-    import { ModuleScope } from "web/modules/modulescope";
     export abstract class Module {
         readonly name: string;
         cs: Cursor<Module>;
-        scope: ModuleScope;
+        scope: any;
         $ref: any;
+        $obj: any;
         alias: string;
+        readonly $props: any;
         constructor(name: string);
         setparent(parent: Module): void;
         setalias(alias: string, group?: boolean): void;
@@ -117,7 +118,8 @@ declare module "web/modules/modulefactory" {
     export abstract class ModuleFactory extends core.NamedFactory<Module> implements core.NamedObject {
         readonly name: string;
         constructor(name: string);
-        abstract create(target: ModuleTemplate): Module;
+        create(target: ModuleTemplate): Module;
+        abstract docreate(target: ModuleTemplate): Module;
         abstract process(target: ModuleTemplate): void;
     }
     export interface ModuleTemplate {
