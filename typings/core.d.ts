@@ -20,7 +20,7 @@ declare module "common" {
     export function addrange(target: any[], items: any[]): void;
     export function diff(a: Date, b: Date, mode?: number): number;
     export function is(target: any, type: any): boolean;
-    export function trigger(target: any, name: string, args?: any[]): any;
+    export function trigger(target: any, name: string, args?: any[], scope?: any): void;
     export class Factory<T> {
         protected list: T[];
         regist(item: T): void;
@@ -55,6 +55,7 @@ declare module "cursor" {
             cs: any;
         }>(target: T): void;
         setparent(pcs?: Cursor<T>): void;
+        dispose(): void;
     }
 }
 declare module "web/elements" {
@@ -96,11 +97,45 @@ declare module "web/modules/modulescope" {
         constructor($parent?: ModuleScope);
     }
 }
+declare module "web/modules/vnode" {
+    import * as core from "common";
+    import { Cursor } from "cursor";
+    import { Module } from "web/modules/module";
+    export class VNodeFactory implements core.NamedObject {
+        readonly name: string;
+        constructor(name: string);
+        static instance: core.NamedFactory<VNodeFactory>;
+    }
+    export function parseElement(node: CoreNode, parent?: CoreNode, scope?: any): void;
+    export class vnode {
+        protected _scope: any;
+        readonly md: Module;
+        readonly cs: Cursor<vnode>;
+        alias: string;
+        ref: any;
+        obj: any;
+        readonly children: vnode[];
+        protected _props: any;
+        constructor(el?: Node, _scope?: any, md?: Module);
+        prop(name: string): any;
+        scope(): any;
+        addprop(name: string, val: any): void;
+        setparent(parent: vnode): void;
+        addchild(child: vnode): void;
+        setalias(alias: string, group: boolean): void;
+        dispose(): void;
+    }
+    export class CoreNode extends Node {
+        vn: vnode;
+    }
+}
 declare module "web/modules/operationode" {
     import { Module } from "web/modules/module";
     import { Cursor } from "cursor";
+    import { vnode } from "web/modules/vnode";
     export abstract class OperationNode extends Element {
         static check(node: OperationNode, parent?: OperationNode): boolean;
+        vn: vnode;
         md: Module;
         protected _scope: OperationScope;
         cs: Cursor<OperationNode>;
