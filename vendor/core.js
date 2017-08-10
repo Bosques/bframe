@@ -228,6 +228,12 @@ define("common", ["require", "exports"], function (require, exports) {
         }
     }
     exports.trigger = trigger;
+    function create(constructor, argArray, nocreate) {
+        var args = [null].concat(argArray);
+        var factoryFunction = constructor.bind.apply(constructor, args);
+        return nocreate ? factoryFunction : new factoryFunction();
+    }
+    exports.create = create;
     var Factory = (function () {
         function Factory() {
             this.list = [];
@@ -273,6 +279,34 @@ define("common", ["require", "exports"], function (require, exports) {
         return NamedFactory;
     }());
     exports.NamedFactory = NamedFactory;
+    var NamedCreator = (function () {
+        function NamedCreator(caseSensitive) {
+            this.caseSensitive = caseSensitive;
+            this.cache = {};
+        }
+        NamedCreator.prototype.regist = function (item, factoryName) {
+            var c = item.constructor;
+            var name = factoryName || item.name;
+            if (!this.caseSensitive) {
+                name = name.toLowerCase();
+            }
+            this.cache[name] = c;
+        };
+        NamedCreator.prototype.create = function (name, args) {
+            var n = (!this.caseSensitive) ? name.toLowerCase() : name;
+            var c = this.cache[n];
+            if (c) {
+                return create(c, args);
+            }
+            return null;
+        };
+        NamedCreator.prototype.get = function (name) {
+            var n = (!this.caseSensitive) ? name.toLowerCase() : name;
+            return this.cache[n];
+        };
+        return NamedCreator;
+    }());
+    exports.NamedCreator = NamedCreator;
 });
 define("info", ["require", "exports", "common"], function (require, exports, common_1) {
     "use strict";
@@ -293,7 +327,7 @@ define("cursor", ["require", "exports"], function (require, exports) {
         Object.defineProperty(Cursor.prototype, "childunit", {
             get: function () {
                 var t = this.target;
-                var at = t['alias'] || t.getAttribute('alias');
+                var at = t['alias'] || (t.getAttribute && t.getAttribute('alias'));
                 if (at) {
                     return this.target;
                 }
@@ -498,28 +532,39 @@ define("web/modules/modulescope", ["require", "exports"], function (require, exp
 define("web/modules/vnode", ["require", "exports", "common", "cursor"], function (require, exports, core, cursor_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var VNodeFactory = (function () {
-        function VNodeFactory(name) {
+    var NodeFactory = (function () {
+        function NodeFactory(name) {
             this.name = name;
         }
-        VNodeFactory.instance = new core.NamedFactory();
-        return VNodeFactory;
+        NodeFactory.parse = function (entry, scope) {
+            var rlt = parseElement(entry, scope);
+            return rlt;
+        };
+        NodeFactory.instance = new core.NamedCreator();
+        return NodeFactory;
     }());
-    exports.VNodeFactory = VNodeFactory;
-    function parseElement(node, parent, scope) {
-        var md = undefined;
+    exports.NodeFactory = NodeFactory;
+    function parseElement(node, scope, parent) {
+        var tag = null;
         if (core.is(node, Element)) {
             var el = node;
-            var tag = el.tagName.toLowerCase();
-            md = VNodeFactory.instance.get(tag);
+            tag = el.tagName.toLowerCase();
         }
-        var vn = new vnode(node, scope || (parent ? parent.vn.scope() : undefined), md ? md.create() : undefined);
+        else {
+            tag = node.nodeName.toLowerCase();
+        }
+        //let vn = new vnode(node, scope || (parent?parent.vn.scope():undefined), md?md.create():undefined);
+        var vn = NodeFactory.instance.create(tag, [node]);
+        if (!vn) {
+            vn = new vnode(node, 'vnode');
+        }
+        vn.setscope(scope || (parent ? parent.vn.scope() : undefined));
         node.vn = vn;
         var attrs = node.attributes;
         core.all(attrs, function (at, i) {
             var aname = at.nodeName.toLowerCase();
             if (aname == 'alias' || aname == 'group') {
-                vn.setalias(aname, aname == 'group');
+                scope = vn.setalias(aname, aname == 'group');
             }
             else {
                 vn.addprop(at.nodeName, at.nodeValue);
@@ -528,25 +573,21 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor"], function
         if (parent) {
             vn.setparent(parent.vn);
         }
-        core.trigger(vn, 'created', [parent.vn], vn.scope());
+        core.trigger(vn, 'created', [parent ? parent.vn : null], vn.scope());
         var children = node.childNodes;
         core.all(children, function (ch, i) {
-            parseElement(ch, node);
+            parseElement(ch, scope, node);
         });
-        core.trigger(vn, 'ready', [parent.vn], vn.scope());
+        core.trigger(vn, 'ready', [parent ? parent.vn : null], vn.scope());
     }
     exports.parseElement = parseElement;
     var vnode = (function () {
-        function vnode(el, _scope, md) {
-            this._scope = _scope;
-            this.md = md;
+        function vnode(el, name) {
             this.children = [];
             this._props = {};
             this.ref = el;
-            if (!this._scope) {
-                this._scope = {};
-            }
-            this.cs = new cursor_2.Cursor();
+            cursor_2.Cursor.check(this);
+            this.name = name;
         }
         vnode.prototype.prop = function (name) {
             return this._props[name];
@@ -557,6 +598,9 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor"], function
         vnode.prototype.addprop = function (name, val) {
             var self = this;
             this._props[name] = val;
+        };
+        vnode.prototype.setscope = function (scope) {
+            this._scope = scope || {};
         };
         vnode.prototype.setparent = function (parent) {
             this.cs.setparent(parent.cs);
@@ -575,6 +619,7 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor"], function
                     this._scope.$parent = u.scope();
                 }
             }
+            return this._scope;
         };
         vnode.prototype.dispose = function () {
             this._props = null;

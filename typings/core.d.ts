@@ -21,6 +21,7 @@ declare module "common" {
     export function diff(a: Date, b: Date, mode?: number): number;
     export function is(target: any, type: any): boolean;
     export function trigger(target: any, name: string, args?: any[], scope?: any): void;
+    export function create(constructor: any, argArray: any[], nocreate?: boolean): any;
     export class Factory<T> {
         protected list: T[];
         regist(item: T): void;
@@ -32,6 +33,14 @@ declare module "common" {
         constructor(caseSensitive?: boolean);
         regist(item: T): void;
         registAll(items: T[]): void;
+        get(name: string): any;
+    }
+    export class NamedCreator<T extends NamedObject> {
+        protected caseSensitive: boolean;
+        protected cache: any;
+        constructor(caseSensitive?: boolean);
+        regist(item: T, factoryName?: string): void;
+        create(name: string, args?: any[]): any;
         get(name: string): any;
     }
     export interface NamedObject {
@@ -100,29 +109,30 @@ declare module "web/modules/modulescope" {
 declare module "web/modules/vnode" {
     import * as core from "common";
     import { Cursor } from "cursor";
-    import { Module } from "web/modules/module";
-    export class VNodeFactory implements core.NamedObject {
+    export class NodeFactory implements core.NamedObject {
         readonly name: string;
         constructor(name: string);
-        static instance: core.NamedFactory<VNodeFactory>;
+        static instance: core.NamedCreator<vnode>;
+        static parse(entry: any, scope?: any): void;
     }
-    export function parseElement(node: CoreNode, parent?: CoreNode, scope?: any): void;
+    export function parseElement(node: CoreNode, scope?: any, parent?: CoreNode): void;
     export class vnode {
-        protected _scope: any;
-        readonly md: Module;
+        readonly name: string;
         readonly cs: Cursor<vnode>;
         alias: string;
         ref: any;
         obj: any;
         readonly children: vnode[];
         protected _props: any;
-        constructor(el?: Node, _scope?: any, md?: Module);
+        protected _scope: any;
+        constructor(el: CoreNode, name?: string);
         prop(name: string): any;
         scope(): any;
         addprop(name: string, val: any): void;
+        setscope(scope?: any): void;
         setparent(parent: vnode): void;
         addchild(child: vnode): void;
-        setalias(alias: string, group: boolean): void;
+        setalias(alias: string, group: boolean): any;
         dispose(): void;
     }
     export class CoreNode extends Node {
