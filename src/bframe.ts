@@ -12,16 +12,14 @@ export function init(){
     BF.BabyFactory.instance.regist(new BF.CameraModule());
     BF.BabyFactory.instance.regist(new BF.MeshModule());
     Noder.instance.regist(BF.BabyFactory.instance);
-    //Noder.instance.parse(document.body);
+
     NodeFactory.instance.regist(new BN.WorldNode());
+    NodeFactory.instance.regist(new BN.SceneNode());
+    NodeFactory.instance.regist(new BN.CameraNode());
+    NodeFactory.instance.regist(new BN.LightNode());
+    NodeFactory.instance.regist(new BN.MeshNode());
     NodeFactory.parse(document.body);
-    //let bframe = new BFrame(document.body);
 
-    // Create the scene
-    //bframe.createScene();
-
-    // start animation
-    //bframe.animate();
     info.log("Bframe module loaded");
 }
 
