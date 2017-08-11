@@ -20,7 +20,7 @@ declare module "common" {
     export function addrange(target: any[], items: any[]): void;
     export function diff(a: Date, b: Date, mode?: number): number;
     export function is(target: any, type: any): boolean;
-    export function trigger(target: any, name: string, args?: any[], scope?: any): void;
+    export function trigger(target: any, name: string, args?: any[]): any;
     export function create(constructor: any, argArray: any[], nocreate?: boolean): any;
     export class Factory<T> {
         protected list: T[];
@@ -122,6 +122,7 @@ declare module "web/modules/vnode" {
         alias: string;
         ref: any;
         obj: any;
+        on: any;
         readonly children: vnode[];
         protected _props: any;
         protected _scope: any;

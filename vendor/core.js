@@ -214,18 +214,22 @@ define("common", ["require", "exports"], function (require, exports) {
         return target instanceof type;
     }
     exports.is = is;
-    function trigger(target, name, args, scope) {
+    function trigger(target, name, args) {
+        var scope = target.on;
         if (!scope) {
             scope = {};
         }
         var evthandler = target["on" + name];
-        var scopehandler = scope["on" + name];
+        var scopehandler = scope[name];
+        var rlt = null;
         if (evthandler) {
-            evthandler.apply(target, args);
+            rlt = evthandler.apply(target, args);
         }
         if (scopehandler) {
-            scopehandler.apply(target, args);
+            add(args, rlt);
+            rlt = scopehandler.apply(target, args);
         }
+        return rlt;
     }
     exports.trigger = trigger;
     function create(constructor, argArray, nocreate) {
@@ -529,7 +533,7 @@ define("web/modules/modulescope", ["require", "exports"], function (require, exp
     }());
     exports.ModuleScope = ModuleScope;
 });
-define("web/modules/vnode", ["require", "exports", "common", "cursor"], function (require, exports, core, cursor_2) {
+define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elements"], function (require, exports, core, cursor_2, nodes) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var NodeFactory = (function () {
@@ -563,8 +567,16 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor"], function
         var attrs = node.attributes;
         core.all(attrs, function (at, i) {
             var aname = at.nodeName.toLowerCase();
+            var aval = at.nodeValue;
             if (aname == 'alias' || aname == 'group') {
                 scope = vn.setalias(aname, aname == 'group');
+            }
+            else if (core.starts(aname, 'if')) {
+                var f = vn.scope()[aval];
+                if (f) {
+                    var n = aname.substr(2, aname.length - 2);
+                    vn.on[n] = f;
+                }
             }
             else {
                 vn.addprop(at.nodeName, at.nodeValue);
@@ -573,12 +585,18 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor"], function
         if (parent) {
             vn.setparent(parent.vn);
         }
-        core.trigger(vn, 'created', [parent ? parent.vn : null], vn.scope());
+        var html = core.trigger(vn, 'render', [parent ? parent.vn : null]);
+        if (html) {
+            var n = nodes.create(html);
+            parent.appendChild(n);
+            core.trigger(vn, 'rendered', [n]);
+        }
+        core.trigger(vn, 'created', [parent ? parent.vn : null]);
         var children = node.childNodes;
         core.all(children, function (ch, i) {
             parseElement(ch, scope, node);
         });
-        core.trigger(vn, 'ready', [parent ? parent.vn : null], vn.scope());
+        core.trigger(vn, 'ready', [parent ? parent.vn : null]);
     }
     exports.parseElement = parseElement;
     var vnode = (function () {
@@ -588,6 +606,7 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor"], function
             this.ref = el;
             cursor_2.Cursor.check(this);
             this.name = name;
+            this.on = {};
         }
         vnode.prototype.prop = function (name) {
             return this._props[name];
