@@ -182,6 +182,12 @@ export class MeshNode extends bnode{
             let p3 = BABYLON.Vector3.FromArray(pos);
             this.Mesh.setAbsolutePosition(p3);
         }
+        let rot = this.bprop('rot');
+        if (rot){
+            this.Mesh.rotate(BABYLON.Vector3.FromArray([1, 0, 0]), rot[0] * Math.PI/180);
+            this.Mesh.rotate(BABYLON.Vector3.FromArray([0, 1, 0]), rot[1] * Math.PI/180);
+            this.Mesh.rotate(BABYLON.Vector3.FromArray([1, 0, 1]), rot[2] * Math.PI/180);
+        }
     }
 }
 
