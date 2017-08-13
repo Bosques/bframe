@@ -540,7 +540,7 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elem
         core.all(children, function (ch, i) {
             var v = ch.vn;
             if (v) {
-                core.trigger(vn, 'ready', [node.vn]);
+                core.trigger(v, 'ready', [node.vn]);
             }
         });
     }

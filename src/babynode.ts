@@ -87,6 +87,8 @@ export class SceneNode extends bnode{
     oncreated(world:WorldNode){
         let engine = world.Engine;
         let scene = new BABYLON.Scene(engine);
+        //scene.workerCollisions = true;
+        scene.collisionsEnabled = true;
         this.obj = scene;
         this.scope().activeScene = scene;
     }
@@ -104,9 +106,9 @@ export class CameraNode extends bnode{
         let camera:BABYLON.TargetCamera = null;
         if (type == 'FreeCamera'){
             let p3 = BABYLON.Vector3.FromArray(this.bprop('pos'));
+            let cam = <BABYLON.FreeCamera>bcreate(type, ['camera1', p3, scene.Scene]);
 
-            camera = <BABYLON.TargetCamera>bcreate(type
-                , ['camera1', p3, scene.Scene]);
+            camera = cam;
             let target = this.bprop('target');
             let v3 = BABYLON.Vector3.FromArray(target);
             camera.setTarget(v3);
@@ -114,19 +116,25 @@ export class CameraNode extends bnode{
                 camera.attachControl(this.scope().canvas);
             }
         }else{
-            let p3 = this.bprop('abr');
-            p3[0] *= Math.PI/180;
-            p3[1] *= Math.PI/180;
+            let a3 = this.bprop('abr');
+            a3[0] *= Math.PI/180;
+            a3[1] *= Math.PI/180;
             let target = this.bprop('target');
             let v3 = BABYLON.Vector3.FromArray(target);
-            camera = <BABYLON.TargetCamera>bcreate(type
-                , ['camera1', p3[0], p3[1], p3[2], v3, scene.Scene]);
+            let cam = <BABYLON.ArcRotateCamera>bcreate(type, ['camera1', a3[0], a3[1], a3[2], v3, scene.Scene]);
+            cam.checkCollisions = true;
+            cam.collisionRadius = new BABYLON.Vector3(1, 1, 1);
+            
+            camera = cam;
             if (this.bprop('active')){
                 camera.attachControl(this.scope().canvas);
             }
         }
-
+        camera.inertia = 0.5;
+        camera.minZ = 0.001;
+        camera.maxZ = 1000000;
         this.obj = camera;
+
         this.scope().activeCamera = camera;
     }
 }
@@ -145,6 +153,7 @@ export class LightNode extends bnode{
     }
 }
 
+//http://www.babylonjs-playground.com/#RAUTNC
 export class MeshNode extends bnode{
     constructor(el?:CoreNode){
         super(el, 'b.mesh');
@@ -157,14 +166,21 @@ export class MeshNode extends bnode{
     oncreated(parent:bnode){
         let scene = parent.getscene();
         let options = this.bprop('options');
-        let mesh = bmesh(this.bprop('type'), [this.bprop('n'), options, scene]);
+        let bname = this.bprop('n');
+        let mesh = <BABYLON.Mesh>bmesh(this.bprop('type'), [bname, options, scene]);
+        mesh.checkCollisions = true;
         this.obj = mesh;
     }
 
     onready(parent:bnode){
         if (parent instanceof MeshNode){
             let p = <MeshNode>parent;
-            //this.Mesh.parent = p.Mesh;
+            this.Mesh.parent = p.Mesh;
+        }
+        let pos = this.bprop('pos');
+        if (pos){
+            let p3 = BABYLON.Vector3.FromArray(pos);
+            this.Mesh.setAbsolutePosition(p3);
         }
     }
 }
