@@ -335,11 +335,26 @@ define("cursor", ["require", "exports"], function (require, exports) {
                 if (at) {
                     return this.target;
                 }
-                return this.unit || this.target;
+                return this._unit || this.target;
             },
             enumerable: true,
             configurable: true
         });
+        Cursor.prototype.unit = function (name) {
+            var u = this._unit;
+            if (name) {
+                while (true) {
+                    if (!u || u.name == name) {
+                        break;
+                    }
+                    u = u.cs._unit;
+                }
+                return (u && u.name == name) ? u : undefined;
+            }
+            else {
+                return u;
+            }
+        };
         Cursor.check = function (target) {
             if (!target.cs) {
                 var cs = new Cursor();
@@ -351,12 +366,12 @@ define("cursor", ["require", "exports"], function (require, exports) {
             if (pcs) {
                 this.parent = pcs.target;
                 this.root = pcs.root || pcs.target;
-                this.unit = pcs.childunit;
+                this._unit = pcs.childunit;
             }
         };
         Cursor.prototype.dispose = function () {
             this.root = null;
-            this.unit = null;
+            this._unit = null;
             this.parent = null;
             this.target = null;
         };
@@ -458,82 +473,7 @@ define("web/elements", ["require", "exports", "common"], function (require, expo
     exports.astyle = astyle;
     ;
 });
-define("web/modules/module", ["require", "exports", "common", "cursor", "web/elements", "web/modules/modulescope"], function (require, exports, core, cursor_1, nodes, modulescope_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var Module = (function () {
-        function Module(name) {
-            this.name = name;
-            this.$props = {};
-            name = name.toLowerCase();
-            //this.cs = new Cursor<Module>();
-            cursor_1.Cursor.check(this);
-            this.scope = new modulescope_1.ModuleScope();
-        }
-        Module.prototype.setparent = function (parent) {
-            var cs = this.cs;
-            if (parent) {
-                var pcs = parent.cs;
-                cs.setparent(pcs);
-                this.scope = parent.scope;
-                //parent.setchild(this);
-                core.trigger(parent, 'child', [this]);
-            }
-        };
-        Module.prototype.setalias = function (alias, group) {
-            this.alias = alias;
-            var u = this.cs.unit;
-            if (u) {
-                u["$" + alias] = this;
-            }
-            if (group) {
-                this.scope = new modulescope_1.ModuleScope(this.scope);
-            }
-        };
-        return Module;
-    }());
-    exports.Module = Module;
-    var NodeModule = (function (_super) {
-        __extends(NodeModule, _super);
-        function NodeModule(name) {
-            return _super.call(this, name) || this;
-        }
-        NodeModule.prototype.render = function (parentEl) {
-            var html = this.dorender();
-            var node = nodes.make(html);
-            parentEl.appendChild(node);
-            return node;
-        };
-        return NodeModule;
-    }(Module));
-    exports.NodeModule = NodeModule;
-});
-define("web/modules/modulescope", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var ModuleScope = (function () {
-        function ModuleScope($parent) {
-            this.$parent = $parent;
-        }
-        ModuleScope.check = function (target, parent) {
-            if (target) {
-                if (!target.scope && parent.scope) {
-                    target.scope = parent.scope;
-                }
-                else if (!target.scope && parent && !parent.scope) {
-                    // Parent should always have a scope.
-                    debugger;
-                }
-                else {
-                    target.scope = new ModuleScope(target.scope);
-                }
-            }
-        };
-        return ModuleScope;
-    }());
-    exports.ModuleScope = ModuleScope;
-});
-define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elements"], function (require, exports, core, cursor_2, nodes) {
+define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elements"], function (require, exports, core, cursor_1, nodes) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var NodeFactory = (function () {
@@ -564,12 +504,15 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elem
         }
         vn.setscope(scope || (parent ? parent.vn.scope() : undefined));
         node.vn = vn;
+        if (parent) {
+            vn.setparent(parent.vn);
+        }
         var attrs = node.attributes;
         core.all(attrs, function (at, i) {
             var aname = at.nodeName.toLowerCase();
             var aval = at.nodeValue;
             if (aname == 'alias' || aname == 'group') {
-                scope = vn.setalias(aname, aname == 'group');
+                scope = vn.setalias(aval, aname == 'group');
             }
             else if (core.starts(aname, 'if')) {
                 var f = vn.scope()[aval];
@@ -582,9 +525,6 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elem
                 vn.addprop(at.nodeName, at.nodeValue);
             }
         });
-        if (parent) {
-            vn.setparent(parent.vn);
-        }
         var html = core.trigger(vn, 'render', [parent ? parent.vn : null]);
         if (html) {
             var n = nodes.create(html);
@@ -596,7 +536,13 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elem
         core.all(children, function (ch, i) {
             parseElement(ch, scope, node);
         });
-        core.trigger(vn, 'ready', [parent ? parent.vn : null]);
+        core.trigger(vn, 'setup', [parent ? parent.vn : null]);
+        core.all(children, function (ch, i) {
+            var v = ch.vn;
+            if (v) {
+                core.trigger(vn, 'ready', [node.vn]);
+            }
+        });
     }
     exports.parseElement = parseElement;
     var vnode = (function () {
@@ -604,7 +550,7 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elem
             this.children = [];
             this._props = {};
             this.ref = el;
-            cursor_2.Cursor.check(this);
+            cursor_1.Cursor.check(this);
             this.name = name;
             this.on = {};
         }
@@ -630,7 +576,7 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elem
         };
         vnode.prototype.setalias = function (alias, group) {
             this.alias = alias;
-            var u = this.cs.unit;
+            var u = this.cs.unit();
             if (u) {
                 u["$" + alias] = this;
                 if (group) {
@@ -657,223 +603,12 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elem
     }(Node));
     exports.CoreNode = CoreNode;
 });
-define("web/modules/operationode", ["require", "exports", "cursor"], function (require, exports, cursor_3) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var OperationNode = (function (_super) {
-        __extends(OperationNode, _super);
-        function OperationNode() {
-            return _super !== null && _super.apply(this, arguments) || this;
-        }
-        OperationNode.check = function (node, parent) {
-            if (node.nodeName.indexOf('#') < 0) {
-                cursor_3.Cursor.check(node);
-                node.setalias = function (alias, group) {
-                    var cs = this.cs;
-                    var u = cs.unit;
-                    if (u) {
-                        u["$" + alias] = this;
-                    }
-                    if (group) {
-                        var self_1 = this;
-                        self_1._scope = new OperationScope(self_1._scope);
-                    }
-                };
-                node.setparent = function (parent) {
-                    var self = this;
-                    var cs = self.cs;
-                    if (parent) {
-                        var pcs = parent.cs;
-                        cs.setparent(pcs);
-                        self._scope = parent.scope;
-                    }
-                };
-                node.scope = function (scope) {
-                    var self = this;
-                    if (scope) {
-                        self._scope = scope;
-                    }
-                    return self._scope;
-                };
-                if (parent) {
-                    node.setparent(parent);
-                }
-                return true;
-            }
-            return false;
-        };
-        return OperationNode;
-    }(Element));
-    exports.OperationNode = OperationNode;
-    var OperationScope = (function () {
-        function OperationScope($parent) {
-            this.$parent = $parent;
-        }
-        OperationScope.check = function (target, parent) {
-            if (target) {
-                if (!target.scope()) {
-                    if (!parent) {
-                        target.scope(new OperationScope());
-                    }
-                    else if (parent.scope()) {
-                        target.scope(parent.scope());
-                    }
-                    else {
-                        console.log('Parent should always has scope');
-                        debugger;
-                    }
-                }
-            }
-        };
-        return OperationScope;
-    }());
-    exports.OperationScope = OperationScope;
-});
-////<amd-module name="ModuleFactories"/>
-define("web/modules/modulefactory", ["require", "exports", "common"], function (require, exports, core) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var ModuleFactory = (function (_super) {
-        __extends(ModuleFactory, _super);
-        function ModuleFactory(name) {
-            var _this = _super.call(this) || this;
-            _this.name = name;
-            name = name.toLowerCase();
-            return _this;
-        }
-        ModuleFactory.prototype.create = function (target) {
-            var rlt = this.docreate(target);
-            core.extend(rlt.$props, target, { tag: true });
-            return rlt;
-        };
-        return ModuleFactory;
-    }(core.NamedFactory));
-    exports.ModuleFactory = ModuleFactory;
-});
-define("web/modules/noder", ["require", "exports", "common", "web/modules/operationode", "web/modules/module"], function (require, exports, core, operationode_1, module_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var Noder = (function (_super) {
-        __extends(Noder, _super);
-        function Noder() {
-            return _super.call(this) || this;
-        }
-        Noder.prototype.parse = function (entry) {
-            var entries = this.getentries(entry);
-            var self = this;
-            core.all(entries, function (it, i) {
-                self.parseNode(it);
-            });
-        };
-        Noder.prototype.getfactoryname = function (nodename) {
-            if (nodename && nodename.indexOf('.') > 0) {
-                var list = nodename.split('.');
-                return { f: list[0], m: list.length > 1 ? list[1] : '' };
-            }
-            return { f: nodename, m: nodename };
-        };
-        Noder.prototype.createmplate = function (target, name) {
-            var template = { tag: name };
-            var alias = undefined;
-            var group = false;
-            core.all(target.attributes, function (attr, i) {
-                if (attr.nodeName == 'alias') {
-                    alias = attr.nodeValue;
-                }
-                else if (attr.nodeName == 'group') {
-                    alias = attr.nodeValue;
-                    group = true;
-                }
-                else {
-                    template[attr.nodeName] = attr.nodeValue;
-                }
-            });
-            return { template: template, alias: alias, group: group };
-        };
-        Noder.prototype.parseNode = function (target, parentNode) {
-            operationode_1.OperationNode.check(target, parentNode);
-            var self = this;
-            var r = self.getfactoryname(target.nodeName);
-            var temp = this.createmplate(target, r.m);
-            if (temp.alias && parentNode) {
-                target.setalias(temp.alias, temp.group);
-            }
-            var factory = self.get(r.f);
-            if (factory) {
-                var md = factory.create(temp.template);
-                if (md) {
-                    target.md = md;
-                    md.$ref = target;
-                    if (parent) {
-                        md.setparent(parentNode.md);
-                    }
-                    if (temp.alias) {
-                        md.setalias(temp.alias, temp.group);
-                    }
-                    if (core.is(md, module_1.NodeModule)) {
-                        var ndmodule = md;
-                        var node = ndmodule.render(target);
-                        core.trigger(md, 'rendered', [node]);
-                    }
-                    core.trigger(md, 'created', [parentNode ? parentNode.md : null]);
-                    core.all(target.childNodes, function (item, i) {
-                        self.parseNode(item, target);
-                    });
-                    core.trigger(md, 'ready', [parentNode ? parentNode.md : null]);
-                }
-            }
-            else {
-                core.all(target.childNodes, function (item, i) {
-                    if (item.nodeName.indexOf('#') < 0) {
-                        self.parseNode(item, target);
-                    }
-                });
-            }
-        };
-        Noder.prototype.getentries = function (entry) {
-            var entryEls = entry;
-            if (typeof (entry) == 'string') {
-                entryEls = [];
-                var list = document.querySelectorAll(entry);
-                core.all(list, function (it, i) {
-                    core.add(entryEls, it);
-                });
-            }
-            else if (entry instanceof Array) {
-                entryEls = [];
-                core.all(entry, function (it, i) {
-                    if (typeof (it) == 'string') {
-                        var list = document.querySelectorAll(it);
-                        core.all(list, function (item, idx) {
-                            core.add(entryEls, item);
-                        });
-                    }
-                    else if (it instanceof Array) {
-                        core.all(it, function (item, idx) {
-                            core.add(entryEls, item);
-                        });
-                    }
-                    else {
-                        core.add(entryEls, it);
-                    }
-                });
-            }
-            else {
-                entryEls = [entry];
-            }
-            return entryEls;
-        };
-        Noder.instance = new Noder();
-        return Noder;
-    }(core.NamedFactory));
-    exports.Noder = Noder;
-});
-define("core", ["require", "exports", "info", "common", "web/modules/noder"], function (require, exports, info_1, common_3, noder_1) {
+define("core", ["require", "exports", "info", "common", "web/modules/vnode"], function (require, exports, info_1, common_3, nodes) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function init(callback) {
         if (callback) {
-            callback(noder_1.Noder.instance);
+            callback(nodes.NodeFactory.instance);
         }
         info_1.log("Core module loaded");
     }
