@@ -39,6 +39,13 @@ export class bnode extends vnode{
         }
         return f.apply(this, this.cs.unit(), this.scope(), this.ref);
     }
+    protected vprop(attr:string){
+        let r = this.bprop(attr);
+        if (r){
+            return BABYLON.Vector3.FromArray(r);
+        }
+        return null;
+    }
 }
 export class WorldNode extends bnode{
     constructor(el?:CoreNode){
@@ -155,8 +162,8 @@ export class LightNode extends bnode{
 
 //http://www.babylonjs-playground.com/#RAUTNC
 export class MeshNode extends bnode{
-    constructor(el?:CoreNode){
-        super(el, 'b.mesh');
+    constructor(el?:CoreNode, name?:string){
+        super(el, name || 'b.mesh');
     }
 
     get Mesh():BABYLON.Mesh{
@@ -167,6 +174,7 @@ export class MeshNode extends bnode{
         let scene = parent.getscene();
         let options = this.bprop('options');
         let bname = this.bprop('n');
+        
         let mesh = <BABYLON.Mesh>bmesh(this.bprop('type'), [bname, options, scene]);
         mesh.checkCollisions = true;
         this.obj = mesh;
@@ -184,12 +192,37 @@ export class MeshNode extends bnode{
         }
         let rot = this.bprop('rot');
         if (rot){
-            this.Mesh.rotate(BABYLON.Vector3.FromArray([1, 0, 0]), rot[0] * Math.PI/180);
-            this.Mesh.rotate(BABYLON.Vector3.FromArray([0, 1, 0]), rot[1] * Math.PI/180);
-            this.Mesh.rotate(BABYLON.Vector3.FromArray([1, 0, 1]), rot[2] * Math.PI/180);
+            let center = this.vprop('center');
+            console.log(center);
+            if (center){
+                this.Mesh.rotateAround(center, BABYLON.Vector3.FromArray([1, 0, 0]), rot[0] * Math.PI/180);
+                this.Mesh.rotateAround(center, BABYLON.Vector3.FromArray([0, 1, 0]), rot[1] * Math.PI/180);
+                this.Mesh.rotateAround(center, BABYLON.Vector3.FromArray([1, 0, 1]), rot[2] * Math.PI/180);
+            }else{
+                this.Mesh.rotate(BABYLON.Vector3.FromArray([1, 0, 0]), rot[0] * Math.PI/180);
+                this.Mesh.rotate(BABYLON.Vector3.FromArray([0, 1, 0]), rot[1] * Math.PI/180);
+                this.Mesh.rotate(BABYLON.Vector3.FromArray([1, 0, 1]), rot[2] * Math.PI/180);
+            }
         }
     }
 }
+
+export class GroupNode extends MeshNode{
+    constructor(el?:CoreNode){
+        super(el, 'b.group');
+    }
+
+    oncreated(parent:bnode){
+        let scene = parent.getscene();
+        let bname = this.bprop('n');
+        
+        let mesh = <BABYLON.Mesh>bmesh('Box', [bname, {size:0}, scene]);
+        mesh.isVisible = false;
+        this.obj = mesh;
+    }
+}
+
+
 
 function bcreate(type:string, args?:any[]){
     let w = <any>window;

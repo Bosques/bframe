@@ -54,6 +54,7 @@ declare module "cursor" {
     export class Cursor<T extends {
         cs: any;
         name: string;
+        has?: Function;
     }> {
         root: T;
         readonly childunit: T;
@@ -95,6 +96,7 @@ declare module "web/modules/vnode" {
         alias: string;
         ref: any;
         on: any;
+        has(name: string): boolean;
         readonly children: vnode[];
         protected _props: any;
         protected _scope: any;
@@ -105,7 +107,8 @@ declare module "web/modules/vnode" {
         setscope(scope?: any): void;
         setparent(parent: vnode): void;
         addchild(child: vnode): void;
-        setalias(alias: string, group: boolean): any;
+        setgroup(): any;
+        setalias(alias: string): void;
         dispose(): void;
     }
     export class CoreNode extends Node {

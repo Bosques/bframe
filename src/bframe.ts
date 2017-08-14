@@ -9,6 +9,7 @@ export function init(){
     NodeFactory.instance.regist(new BN.CameraNode());
     NodeFactory.instance.regist(new BN.LightNode());
     NodeFactory.instance.regist(new BN.MeshNode());
+    NodeFactory.instance.regist(new BN.GroupNode());
     NodeFactory.parse(document.body);
 
     info.log("Bframe module loaded");

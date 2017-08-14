@@ -331,7 +331,7 @@ define("cursor", ["require", "exports"], function (require, exports) {
         Object.defineProperty(Cursor.prototype, "childunit", {
             get: function () {
                 var t = this.target;
-                var at = t['alias'] || (t.getAttribute && t.getAttribute('alias'));
+                var at = t['alias'] || t['group'] || (t.getAttribute && (t.getAttribute('alias') || t.getAttribute('group')));
                 if (at) {
                     return this.target;
                 }
@@ -342,14 +342,17 @@ define("cursor", ["require", "exports"], function (require, exports) {
         });
         Cursor.prototype.unit = function (name) {
             var u = this._unit;
+            var has = u.has || function (name) {
+                return this.name == name;
+            };
             if (name) {
                 while (true) {
-                    if (!u || u.name == name) {
+                    if (!u || has.apply(u, name)) {
                         break;
                     }
                     u = u.cs._unit;
                 }
-                return (u && u.name == name) ? u : undefined;
+                return (u && has.apply(u, name)) ? u : undefined;
             }
             else {
                 return u;
@@ -489,6 +492,7 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elem
     }());
     exports.NodeFactory = NodeFactory;
     function parseElement(node, scope, parent) {
+        var _this = this;
         var tag = null;
         if (core.is(node, Element)) {
             var el = node;
@@ -511,8 +515,14 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elem
         core.all(attrs, function (at, i) {
             var aname = at.nodeName.toLowerCase();
             var aval = at.nodeValue;
-            if (aname == 'alias' || aname == 'group') {
-                scope = vn.setalias(aval, aname == 'group');
+            if (aname == 'alias') {
+                vn.setalias(aval);
+            }
+            else if (aname == 'group') {
+                if (!_this.alias && aval && aval.length > 0) {
+                    _this.setalias(aval);
+                }
+                scope = vn.setgroup();
             }
             else if (core.starts(aname, 'if')) {
                 var f = vn.scope()[aval];
@@ -554,6 +564,9 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elem
             this.name = name;
             this.on = {};
         }
+        vnode.prototype.has = function (name) {
+            return this.name == name || this.alias == name;
+        };
         vnode.prototype.prop = function (name) {
             return this._props[name];
         };
@@ -574,17 +587,24 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elem
         vnode.prototype.addchild = function (child) {
             core.add(this.children, child);
         };
-        vnode.prototype.setalias = function (alias, group) {
+        vnode.prototype.setgroup = function () {
+            var u = this.cs.unit();
+            if (this.alias) {
+                this._scope = this._scope["$" + this.alias] || {};
+            }
+            else {
+                this._scope = {};
+            }
+            this._scope.$parent = u.scope();
+            this._scope.$root = this.cs.root.scope();
+            return this._scope;
+        };
+        vnode.prototype.setalias = function (alias) {
             this.alias = alias;
             var u = this.cs.unit();
             if (u) {
                 u["$" + alias] = this;
-                if (group) {
-                    this._scope = this._scope["$" + alias] || {};
-                    this._scope.$parent = u.scope();
-                }
             }
-            return this._scope;
         };
         vnode.prototype.dispose = function () {
             this._props = null;
