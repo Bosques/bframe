@@ -476,6 +476,17 @@ define("web/elements", ["require", "exports", "common"], function (require, expo
     exports.astyle = astyle;
     ;
 });
+define("web/modules/scope", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var Scope = (function () {
+        function Scope() {
+        }
+        Scope.instance = {};
+        return Scope;
+    }());
+    exports.Scope = Scope;
+});
 define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elements"], function (require, exports, core, cursor_1, nodes) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });

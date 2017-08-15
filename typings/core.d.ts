@@ -80,6 +80,11 @@ declare module "web/elements" {
     export function create(html: string, multiple?: boolean): Node;
     export function astyle(styles: any, val?: any): any;
 }
+declare module "web/modules/scope" {
+    export class Scope {
+        static readonly instance: any;
+    }
+}
 declare module "web/modules/vnode" {
     import * as core from "common";
     import { Cursor } from "cursor";

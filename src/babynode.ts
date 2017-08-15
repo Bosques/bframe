@@ -1,7 +1,8 @@
 ///<reference path="../typings/index.d.ts"/>
 import * as core from "common";
 import {BFrame} from "./test";
-import { vnode, CoreNode } from "web/modules/vnode";
+import {vnode, CoreNode} from "web/modules/vnode";
+import {Scope} from "web/modules/scope";
 
 export class bnode extends vnode{
     constructor(el?:CoreNode, name?:string){
@@ -97,7 +98,17 @@ export class SceneNode extends bnode{
         //scene.workerCollisions = true;
         scene.collisionsEnabled = true;
         this.obj = scene;
-        this.scope().activeScene = scene;
+        let scope = this.scope();
+        scope.activeScene = scene;
+        if (!scope.color){
+            scope.color = {};
+        }
+        let color = this.bprop('color');
+        if (color){
+            core.all(color, (c:any, i:string)=>{
+                scope.color[`${i}Color`] = BABYLON.Color3.FromArray(c);
+            });
+        }
     }
 }
 
@@ -177,7 +188,17 @@ export class MeshNode extends bnode{
         
         let mesh = <BABYLON.Mesh>bmesh(this.bprop('type'), [bname, options, scene]);
         mesh.checkCollisions = true;
+        
+        let material = new BABYLON.StandardMaterial("texture1", scene);
+        mesh.material = material;
         this.obj = mesh;
+        let scope = this.scope();
+
+        if (scope.color){
+            core.all(scope.color, (c:any, i:string)=>{
+                (<any>material)[i] = c;
+            });
+        }
     }
 
     onready(parent:bnode){
@@ -193,7 +214,7 @@ export class MeshNode extends bnode{
         let rot = this.bprop('rot');
         if (rot){
             let center = this.vprop('center');
-            console.log(center);
+            
             if (center){
                 this.Mesh.rotateAround(center, BABYLON.Vector3.FromArray([1, 0, 0]), rot[0] * Math.PI/180);
                 this.Mesh.rotateAround(center, BABYLON.Vector3.FromArray([0, 1, 0]), rot[1] * Math.PI/180);
