@@ -216,8 +216,30 @@ export class MeshNode extends bnode{
         }
     }
 }
-
-export class MaterialNode extends MeshNode{
+export class SpriteNode extends MeshNode{
+    constructor(el?:CoreNode){
+        super(el, 'b.sprite');
+    }
+    protected _mgr:BABYLON.SpriteManager;
+    get manager():BABYLON.SpriteManager{
+        return this._mgr;
+    }
+    oncreated(parent:bnode){
+        let scene = parent.getscene();
+        let bname = this.bprop('n');
+        let mname = this.bprop('manager');
+        let mgr = <BABYLON.SpriteManager>Scope.instance.get(mname);
+        if (!mgr){
+            mgr = new BABYLON.SpriteManager(mname, '', 2000, 800, scene);
+            Scope.instance.set(mname, mgr);
+        }
+        this._mgr = mgr;
+        mgr.texture
+        let sp = new BABYLON.Sprite(bname, mgr);
+        this.obj = sp;
+    }
+}
+export class MaterialNode extends bnode{
     constructor(el?:CoreNode){
         super(el, 'b.material');
     }
