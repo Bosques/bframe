@@ -12,6 +12,7 @@ export function init(){
     NodeFactory.instance.regist(new BN.GroupNode());
     NodeFactory.instance.regist(new BN.MaterialNode());
     NodeFactory.instance.regist(new BN.SpriteNode());
+    NodeFactory.instance.regist(new BN.TextNode());
     NodeFactory.parse(document.body);
 
     info.log("Bframe module loaded");

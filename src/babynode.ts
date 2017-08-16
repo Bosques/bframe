@@ -10,7 +10,9 @@ export class bnode extends vnode{
     }
     protected obj:any;
     getscene(){
-        if (this instanceof MeshNode){
+        if (this instanceof SpriteNode){
+            return this.scope().get('activeScene');
+        }else if (this instanceof MeshNode){
             let m = <MeshNode>this;
             return m.Mesh.getScene();
         }else if (this instanceof SceneNode){
@@ -198,7 +200,8 @@ export class MeshNode extends bnode{
         let pos = this.bprop('pos');
         if (pos){
             let p3 = BABYLON.Vector3.FromArray(pos);
-            this.Mesh.setAbsolutePosition(p3);
+            //this.Mesh.setAbsolutePosition(p3);
+            this.Mesh.position = p3;
         }
         let rot = this.bprop('rot');
         if (rot){
@@ -238,6 +241,85 @@ export class SpriteNode extends MeshNode{
         let sp = new BABYLON.Sprite(bname, mgr);
         this.obj = sp;
     }
+}
+export class TextNode extends bnode{
+    constructor(el?:CoreNode){
+        super(el, 'b.text');
+    }
+    oncreated(parent:SpriteNode){
+        let scene = parent.getscene();
+        let mgr = parent.manager;
+        this.MakeTextSprite(mgr, scene);
+    }
+    // Just a text-wrapping function
+    protected wrapText(context:CanvasRenderingContext2D, text:string, x:number, y:number, maxWidth:number, lineHeight:number) {
+        var words = text.split(' ');
+        var line = '';
+        var numberOfLines = 0;
+
+        for (var n = 0; n < words.length; n++) {
+            var testLine = line + words[n] + ' ';
+            var metrics = context.measureText(testLine);
+            var testWidth = metrics.width;
+
+            if (testWidth > maxWidth && n > 0) {
+                context.fillText(line, x, y);
+                line = words[n] + ' ';
+                y += lineHeight;
+                numberOfLines++;
+            }
+            else {
+                line = testLine;
+            }
+        }
+        context.fillText(line, x, y);
+
+        return numberOfLines;
+    }
+    protected MakeTextSprite(mgr:BABYLON.SpriteManager, scene:BABYLON.Scene)
+    {
+        // Make a dynamic texture
+        var dynamicTexture = new BABYLON.DynamicTexture("DynamicTexture", 512, scene, true);
+        dynamicTexture.hasAlpha = true;
+
+        var textureContext = dynamicTexture.getContext();
+        textureContext.save();
+        textureContext.textAlign = "center";
+        textureContext.font = "58px Calibri";
+
+        // Some magic numbers
+        var lineHeight = 70;
+        var lineWidth = 500;
+        var fontHeight = 53;
+        var offset = 10; // space between top/bottom borders and actual text
+        var text = "BabylonJs hehe blabla"; // Text to display
+
+        var numberOfLines = 2; // I usually calculate that but for this exmaple let's just say it's 1
+        var textHeight = fontHeight + offset;
+        var labelHeight = numberOfLines * lineHeight + (2 * offset);
+
+        // Background
+        textureContext.fillStyle = "white";
+        textureContext.fillRect(0, 0, dynamicTexture.getSize().width, labelHeight);
+        textureContext.fillStyle = "blue";
+        textureContext.fillRect(0, labelHeight, dynamicTexture.getSize().width, dynamicTexture.getSize().height);
+
+        // text
+        textureContext.fillStyle = "black";
+        this.wrapText(textureContext, text, dynamicTexture.getSize().width / 2, textHeight, lineWidth, lineHeight);
+        textureContext.restore();
+
+        dynamicTexture.update(false);
+
+        // Create the sprite
+        var spriteManager = mgr;
+        spriteManager.texture = dynamicTexture;
+        spriteManager.texture.wrapU = BABYLON.Texture.CLAMP_ADDRESSMODE;
+        spriteManager.texture.wrapV = BABYLON.Texture.CLAMP_ADDRESSMODE;
+        //var sprite = new BABYLON.Sprite("textSprite", spriteManager);
+
+        return labelHeight;
+    };
 }
 export class MaterialNode extends bnode{
     constructor(el?:CoreNode){
