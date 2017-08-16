@@ -64,7 +64,8 @@ export class WorldNode extends bnode{
     onrendered(cv:Element){
         this.obj = new BABYLON.Engine(<HTMLCanvasElement>cv, true);
         let scope = this.scope();
-        scope.canvas = cv;
+        //scope.canvas = cv;
+        scope.set('canvas', cv);
     }
     oncreated(p:vnode){
         Scope.instance.materials = {};
@@ -77,7 +78,7 @@ export class WorldNode extends bnode{
         // run the render loop
         this.Engine.runRenderLoop(() => {
             //this._scene.render();
-            self.scope().activeScene.render();
+            self.scope().get('activeScene').render();
         });
 
         // the canvas/window resize event handler
@@ -101,16 +102,7 @@ export class SceneNode extends bnode{
         scene.collisionsEnabled = true;
         this.obj = scene;
         let scope = this.scope();
-        scope.activeScene = scene;
-        if (!scope.color){
-            scope.color = {};
-        }
-        let color = this.bprop('color');
-        if (color){
-            core.all(color, (c:any, i:string)=>{
-                scope.color[`${i}Color`] = BABYLON.Color3.FromArray(c);
-            });
-        }
+        scope.set('activeScene', scene);
     }
 }
 
@@ -133,7 +125,7 @@ export class CameraNode extends bnode{
             let v3 = BABYLON.Vector3.FromArray(target);
             camera.setTarget(v3);
             if (this.bprop('active')){
-                camera.attachControl(this.scope().canvas);
+                camera.attachControl(this.scope().get('canvas'));
             }
         }else{
             let a3 = this.bprop('abr');
@@ -147,7 +139,7 @@ export class CameraNode extends bnode{
             
             camera = cam;
             if (this.bprop('active')){
-                camera.attachControl(this.scope().canvas);
+                camera.attachControl(this.scope().get('canvas'));
             }
         }
         camera.inertia = 0.5;
@@ -155,7 +147,7 @@ export class CameraNode extends bnode{
         camera.maxZ = 1000000;
         this.obj = camera;
 
-        this.scope().activeCamera = camera;
+        this.scope().set('activeCamera', camera);
     }
 }
 
@@ -188,7 +180,7 @@ export class MeshNode extends bnode{
         let options = this.bprop('options');
         let bname = this.bprop('n');
         let scope = this.scope();
-        let mname = this.bprop('material') || scope.material || 'default';
+        let mname = this.bprop('material') || scope.get('material') || 'default';
         
         let mesh = <BABYLON.Mesh>bmesh(this.bprop('type'), [bname, options, scene]);
         mesh.checkCollisions = true;

@@ -83,18 +83,25 @@ declare module "web/elements" {
 declare module "web/modules/scope" {
     export class Scope {
         static readonly instance: any;
+        protected parent: Scope;
+        readonly bag: any;
+        readonly children: any;
+        get(name: string): any;
+        set(name: string, val: any): void;
+        child(name?: string): Scope;
     }
 }
 declare module "web/modules/vnode" {
     import * as core from "common";
     import { Cursor } from "cursor";
+    import { Scope } from "web/modules/scope";
     export class NodeFactory implements core.NamedObject {
         readonly name: string;
         constructor(name: string);
         static instance: core.NamedCreator<vnode>;
-        static parse(entry: any, scope?: any): void;
+        static parse(entry: any, scope?: Scope): void;
     }
-    export function parseElement(node: CoreNode, scope?: any, parent?: CoreNode): void;
+    export function parseElement(node: CoreNode, scope?: Scope, parent?: CoreNode): void;
     export class vnode {
         readonly name: string;
         readonly cs: Cursor<vnode>;
@@ -104,15 +111,15 @@ declare module "web/modules/vnode" {
         has(name: string): boolean;
         readonly children: vnode[];
         protected _props: any;
-        protected _scope: any;
+        protected _scope: Scope;
         constructor(el: CoreNode, name?: string);
         prop(name: string): any;
-        scope(): any;
+        scope(): Scope;
         addprop(name: string, val: any): void;
         setscope(scope?: any): void;
         setparent(parent: vnode): void;
         addchild(child: vnode): void;
-        setgroup(): any;
+        setgroup(): Scope;
         setalias(alias: string): void;
         dispose(): void;
     }

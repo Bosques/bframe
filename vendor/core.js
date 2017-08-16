@@ -476,18 +476,40 @@ define("web/elements", ["require", "exports", "common"], function (require, expo
     exports.astyle = astyle;
     ;
 });
-define("web/modules/scope", ["require", "exports"], function (require, exports) {
+define("web/modules/scope", ["require", "exports", "common"], function (require, exports, core) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Scope = (function () {
         function Scope() {
+            this.bag = {};
+            this.children = {};
         }
-        Scope.instance = {};
+        Scope.prototype.get = function (name) {
+            var p = this;
+            while (p) {
+                if (p.bag[name]) {
+                    return p.bag[name];
+                }
+                p = p.parent;
+            }
+            return null;
+        };
+        Scope.prototype.set = function (name, val) {
+            this.bag[name] = val;
+        };
+        Scope.prototype.child = function (name) {
+            var n = name || core.uid('scope');
+            var c = new Scope();
+            this.children[n] = c;
+            c.parent = this;
+            return c;
+        };
+        Scope.instance = new Scope();
         return Scope;
     }());
     exports.Scope = Scope;
 });
-define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elements"], function (require, exports, core, cursor_1, nodes) {
+define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elements", "web/modules/scope"], function (require, exports, core, cursor_1, nodes, scope_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var NodeFactory = (function () {
@@ -536,7 +558,7 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elem
                 scope = vn.setgroup();
             }
             else if (core.starts(aname, 'if')) {
-                var f = vn.scope()[aval];
+                var f = vn.scope().bag[aval];
                 if (f) {
                     var n = aname.substr(2, aname.length - 2);
                     vn.on[n] = f;
@@ -589,7 +611,7 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elem
             this._props[name] = val;
         };
         vnode.prototype.setscope = function (scope) {
-            this._scope = scope || {};
+            this._scope = scope || new scope_1.Scope();
         };
         vnode.prototype.setparent = function (parent) {
             this.cs.setparent(parent.cs);
@@ -601,13 +623,17 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elem
         vnode.prototype.setgroup = function () {
             var u = this.cs.unit();
             if (this.alias) {
-                this._scope = this._scope["$" + this.alias] || {};
+                var preset = this._scope.children["" + this.alias];
+                if (preset) {
+                    this._scope = preset;
+                }
+                else {
+                    this._scope = this._scope.child(this.alias);
+                }
             }
             else {
-                this._scope = {};
+                this._scope = this._scope.child();
             }
-            this._scope.$parent = u.scope();
-            this._scope.$root = this.cs.root.scope();
             return this._scope;
         };
         vnode.prototype.setalias = function (alias) {
