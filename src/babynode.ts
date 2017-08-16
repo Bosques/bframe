@@ -66,7 +66,9 @@ export class WorldNode extends bnode{
         let scope = this.scope();
         scope.canvas = cv;
     }
-
+    oncreated(p:vnode){
+        Scope.instance.materials = {};
+    }
     onsetup(pn:vnode){
         this.animate();
     }
@@ -185,20 +187,15 @@ export class MeshNode extends bnode{
         let scene = parent.getscene();
         let options = this.bprop('options');
         let bname = this.bprop('n');
+        let scope = this.scope();
+        let mname = this.bprop('material') || scope.material || 'default';
         
         let mesh = <BABYLON.Mesh>bmesh(this.bprop('type'), [bname, options, scene]);
         mesh.checkCollisions = true;
         
-        let material = new BABYLON.StandardMaterial("texture1", scene);
-        mesh.material = material;
+        //let material = new BABYLON.StandardMaterial("texture1", scene);
+        mesh.material = Scope.instance.materials[mname];
         this.obj = mesh;
-        let scope = this.scope();
-
-        if (scope.color){
-            core.all(scope.color, (c:any, i:string)=>{
-                (<any>material)[i] = c;
-            });
-        }
     }
 
     onready(parent:bnode){
@@ -224,6 +221,28 @@ export class MeshNode extends bnode{
                 this.Mesh.rotate(BABYLON.Vector3.FromArray([0, 1, 0]), rot[1] * Math.PI/180);
                 this.Mesh.rotate(BABYLON.Vector3.FromArray([1, 0, 1]), rot[2] * Math.PI/180);
             }
+        }
+    }
+}
+
+export class MaterialNode extends MeshNode{
+    constructor(el?:CoreNode){
+        super(el, 'b.material');
+    }
+
+    oncreated(parent:bnode){
+        let scene = parent.getscene();
+        let bname = this.bprop('n');
+        let material = new BABYLON.StandardMaterial(bname, scene);
+
+        Scope.instance.materials[bname] = material;
+        this.obj = material;
+
+        let color = this.bprop('color');
+        if (color){
+            core.all(color, (c:any, i:string)=>{
+                (<any>material)[`${i}Color`] = BABYLON.Color3.FromArray(c);
+            });
         }
     }
 }
