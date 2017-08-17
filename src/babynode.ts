@@ -224,6 +224,10 @@ export class SpriteNode extends MeshNode{
         super(el, 'b.sprite');
     }
     protected _mgr:BABYLON.SpriteManager;
+    protected _parent:bnode;
+    get parent():bnode{
+        return this._parent;
+    }
     get manager():BABYLON.SpriteManager{
         return this._mgr;
     }
@@ -240,6 +244,16 @@ export class SpriteNode extends MeshNode{
         mgr.texture
         let sp = new BABYLON.Sprite(bname, mgr);
         this.obj = sp;
+        this._parent = parent;
+        if (parent instanceof MeshNode){
+            let p = this.bprop('pos');
+            if (!p){
+                p = [0,0,0];
+            }
+            let a = parent.Mesh.getAbsolutePosition();
+            this._props.pos = [a.x+p[0], a.y+p[1], a.z+p[2]];
+            //sp.position = BABYLON.Vector3.FromArray(,)
+        }
     }
 }
 export class TextNode extends bnode{
