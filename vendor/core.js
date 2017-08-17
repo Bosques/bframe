@@ -575,6 +575,7 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elem
             core.trigger(vn, 'rendered', [n]);
         }
         core.trigger(vn, 'created', [parent ? parent.vn : null]);
+        core.trigger(vn, 'place', [parent ? parent.vn : null]);
         var children = node.childNodes;
         core.all(children, function (ch, i) {
             parseElement(ch, scope, node);

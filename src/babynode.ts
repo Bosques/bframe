@@ -191,8 +191,7 @@ export class MeshNode extends bnode{
         mesh.material = Scope.instance.materials[mname];
         this.obj = mesh;
     }
-
-    onready(parent:bnode){
+    onplace(parent:bnode){
         if (parent instanceof MeshNode){
             let p = <MeshNode>parent;
             this.Mesh.parent = p.Mesh;
@@ -217,6 +216,8 @@ export class MeshNode extends bnode{
                 this.Mesh.rotate(BABYLON.Vector3.FromArray([1, 0, 1]), rot[2] * Math.PI/180);
             }
         }
+    }
+    onready(parent:bnode){
     }
 }
 export class SpriteNode extends MeshNode{
@@ -245,15 +246,19 @@ export class SpriteNode extends MeshNode{
         let sp = new BABYLON.Sprite(bname, mgr);
         this.obj = sp;
         this._parent = parent;
+    }
+    onplace(parent:bnode){
         if (parent instanceof MeshNode){
             let p = this.bprop('pos');
             if (!p){
                 p = [0,0,0];
             }
             let a = parent.Mesh.getAbsolutePosition();
-            this._props.pos = [a.x+p[0], a.y+p[1], a.z+p[2]];
-            //sp.position = BABYLON.Vector3.FromArray(,)
+            let op = [a.x+p[0], a.y+p[1], a.z+p[2]];
+            console.log(op);
+            this._props.pos = op;
         }
+        super.onplace(parent);
     }
 }
 export class TextNode extends bnode{
@@ -382,6 +387,10 @@ function bcreate(type:string, args?:any[]){
 
 function bmesh(type:string, args?:any[]){
     let w = <any>window;
-    let rlt = <BABYLON.Mesh>w['BABYLON']['MeshBuilder'][`Create${type}`].apply(null, args);
+    let f = w['BABYLON']['MeshBuilder'][`Create${type}`];
+    if (!f){
+        debugger;
+    }
+    let rlt = <BABYLON.Mesh>f.apply(null, args);
     return rlt;
 }
