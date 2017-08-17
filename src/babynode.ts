@@ -119,7 +119,7 @@ export class SceneNode extends bnode{
         ////////////////////////////////////
         // Collision not working with workerCollisions set to true
         // scene.workerCollisions = true;
-        scene.collisionsEnabled = false;
+        scene.collisionsEnabled = true;
         this.obj = scene;
         let scope = this.scope();
         scope.set('activeScene', scene);
@@ -139,7 +139,7 @@ export class CameraNode extends bnode{
         if (type == 'FreeCamera'){
             let p3 = BABYLON.Vector3.FromArray(this.bprop('pos'));
             let cam = <BABYLON.FreeCamera>bcreate(type, ['camera1', p3, scene.Scene]);
-
+            cam.checkCollisions = true;
             camera = cam;
             let target = this.bprop('target');
             let v3 = BABYLON.Vector3.FromArray(target);
@@ -236,7 +236,6 @@ export class MeshNode extends bnode{
     onready(parent:bnode){
         let scene = parent.getscene();
         let mesh = this.Mesh;
-        console.log(mesh);
         if(!mesh.actionManager){
             mesh.actionManager = new BABYLON.ActionManager(scene);
         }

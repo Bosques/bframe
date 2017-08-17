@@ -525,7 +525,6 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elem
     }());
     exports.NodeFactory = NodeFactory;
     function parseElement(node, scope, parent) {
-        var _this = this;
         var tag = null;
         if (core.is(node, Element)) {
             var el = node;
@@ -552,8 +551,8 @@ define("web/modules/vnode", ["require", "exports", "common", "cursor", "web/elem
                 vn.setalias(aval);
             }
             else if (aname == 'group') {
-                if (!_this.alias && aval && aval.length > 0) {
-                    _this.setalias(aval);
+                if (!vn.alias && aval && aval.length > 0) {
+                    vn.setalias(aval);
                 }
                 scope = vn.setgroup();
             }
