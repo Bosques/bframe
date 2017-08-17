@@ -42,6 +42,13 @@ export class bnode extends vnode{
         }
         return f.apply(this, this.cs.unit(), this.scope(), this.ref);
     }
+    protected setprop(attr:string, val:any){
+        let f = this.tasks[attr]
+        if (f){
+            this.tasks[attr] = null;
+        }
+        this._props[attr] = val;
+    }
     protected vprop(attr:string){
         let r = this.bprop(attr);
         if (r){
@@ -254,9 +261,11 @@ export class SpriteNode extends MeshNode{
                 p = [0,0,0];
             }
             let a = parent.Mesh.getAbsolutePosition();
+            
             let op = [a.x+p[0], a.y+p[1], a.z+p[2]];
-            console.log(op);
-            this._props.pos = op;
+            console.log(parent.Mesh.name, [a.x,a.y,a.z], op);
+            //this._props.pos = op;
+            this.setprop('pos', op);
         }
         super.onplace(parent);
     }
