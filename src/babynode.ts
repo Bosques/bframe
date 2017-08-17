@@ -134,7 +134,7 @@ export class CameraNode extends bnode{
             let v3 = BABYLON.Vector3.FromArray(target);
             camera.setTarget(v3);
             if (this.bprop('active')){
-                camera.attachControl(this.scope().get('canvas'));
+                camera.attachControl(this.scope().get('canvas'), true);
             }
         }else{
             let a3 = this.bprop('abr');
@@ -148,7 +148,7 @@ export class CameraNode extends bnode{
             
             camera = cam;
             if (this.bprop('active')){
-                camera.attachControl(this.scope().get('canvas'));
+                camera.attachControl(this.scope().get('canvas'), true);
             }
         }
         camera.inertia = 0.5;
@@ -193,7 +193,6 @@ export class MeshNode extends bnode{
         
         let mesh = <BABYLON.Mesh>bmesh(this.bprop('type'), [bname, options, scene]);
         mesh.checkCollisions = true;
-        
         //let material = new BABYLON.StandardMaterial("texture1", scene);
         mesh.material = Scope.instance.materials[mname];
         this.obj = mesh;
@@ -225,6 +224,23 @@ export class MeshNode extends bnode{
         }
     }
     onready(parent:bnode){
+        let scene = parent.getscene();
+        let mesh = this.Mesh;
+        if(!mesh.actionManager){
+            console.log(scene);
+            mesh.actionManager = new BABYLON.ActionManager(scene);
+        }
+        var onpickAction = new BABYLON.ExecuteCodeAction(
+            BABYLON.ActionManager.OnPickTrigger,
+            function(evt:any) {
+                console.log(meshClicked);
+                if (evt.meshUnderPointer) {
+                    var meshClicked = evt.meshUnderPointer;
+                    console.log(meshClicked);
+                }
+            });
+        mesh.actionManager.registerAction(onpickAction);
+
     }
 }
 export class SpriteNode extends MeshNode{
