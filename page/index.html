@@ -56,9 +56,10 @@
                 pos="[0, 10, -10]" 
                 abr="[45, 45, 10]"
                 active="1"></b.camera>
+
             <b.light alias="lht" type="HemisphericLight"></b.light>
             <b.group n="group" rot="[45, 0, 0]" center="[3,3,3]">
-                <b.mesh alias="sph" type="Sphere" n="sphere1" pos="[0,0,0]" options="{segments:16, diameter:2}">
+                <b.mesh alias="sph" type="Sphere" n="sphere1" pos="[0,-3,0]" options="{segments:16, diameter:2}">
                     <b.sprite n="sp1" manager="sm1" pos="[0,0,4]">
                         <b.text></b.text>
                     </b.sprite>
@@ -66,7 +67,7 @@
                 </b.mesh> 
             </b.group>
             <b.mesh type="Ground" n="ground1" options="{width:6, height:6, subdivisions:2}" material="diff">
-            </b.mesh>  
+            </b.mesh>   
         </b.scene>  
     </b.world>
 </body>

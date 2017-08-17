@@ -2,7 +2,7 @@ export class BFrame {
     private _canvas: HTMLCanvasElement;
     private _engine: BABYLON.Engine;
     private _scene: BABYLON.Scene;
-    private _camera: BABYLON.FreeCamera;
+    private _camera: BABYLON.TargetCamera;
     private _light: BABYLON.Light;
 
     constructor(canvas : any, engine:any) {
@@ -24,6 +24,7 @@ export class BFrame {
 
         // create a FreeCamera, and set its position to (x:0, y:5, z:-10)
         //this._camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 5,-10), this._scene);
+        //this._camera = new BABYLON.ArcRotateCamera('camera1', 1/4*Math.PI, 1/4*Math.PI, 1/4*Math.PI, new BABYLON.Vector3(0, 0,0), scene.Scene);
         this._camera = camera;
 
         // target the camera to scene origin
@@ -39,6 +40,11 @@ export class BFrame {
 
         // create a built-in "sphere" shape; with 16 segments and diameter of 2
         let sphere = BABYLON.MeshBuilder.CreateSphere('sphere1', {segments: 16, diameter: 2}, this._scene);
+        sphere.actionManager = new BABYLON.ActionManager(scene);
+        sphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger
+            , function(evt:any){
+                console.log(evt);
+            }));
 
         // move the sphere upward 1/2 of its height
         sphere.position.y = 1;

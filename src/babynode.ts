@@ -79,8 +79,17 @@ export class WorldNode extends bnode{
     oncreated(p:vnode){
         Scope.instance.materials = {};
     }
-    onsetup(pn:vnode){
+    onready(pn:vnode){
         this.animate();
+        //this.debug();
+    }
+    private debug():void{
+        let scope = this.scope();
+        let scene = scope.get('activeScene');
+        let cam = scope.get('activeCamera');
+        let bf = new BFrame(this.scope().get('canvas'), this.Engine);
+        bf.createScene(scene, cam);
+        bf.animate();
     }
     protected animate() : void {
         let self = this;
@@ -107,8 +116,10 @@ export class SceneNode extends bnode{
     oncreated(world:WorldNode){
         let engine = world.Engine;
         let scene = new BABYLON.Scene(engine);
-        //scene.workerCollisions = true;
-        scene.collisionsEnabled = true;
+        ////////////////////////////////////
+        // Collision not working with workerCollisions set to true
+        // scene.workerCollisions = true;
+        scene.collisionsEnabled = false;
         this.obj = scene;
         let scope = this.scope();
         scope.set('activeScene', scene);
@@ -134,7 +145,7 @@ export class CameraNode extends bnode{
             let v3 = BABYLON.Vector3.FromArray(target);
             camera.setTarget(v3);
             if (this.bprop('active')){
-                camera.attachControl(this.scope().get('canvas'), true);
+                camera.attachControl(this.scope().get('canvas'), false);
             }
         }else{
             let a3 = this.bprop('abr');
@@ -148,12 +159,12 @@ export class CameraNode extends bnode{
             
             camera = cam;
             if (this.bprop('active')){
-                camera.attachControl(this.scope().get('canvas'), true);
+                camera.attachControl(this.scope().get('canvas'), false);
             }
         }
         camera.inertia = 0.5;
-        camera.minZ = 0.001;
-        camera.maxZ = 1000000;
+        camera.minZ = 0.01;
+        camera.maxZ = 100000;
         this.obj = camera;
 
         this.scope().set('activeCamera', camera);
@@ -193,7 +204,6 @@ export class MeshNode extends bnode{
         
         let mesh = <BABYLON.Mesh>bmesh(this.bprop('type'), [bname, options, scene]);
         mesh.checkCollisions = true;
-        //let material = new BABYLON.StandardMaterial("texture1", scene);
         mesh.material = Scope.instance.materials[mname];
         this.obj = mesh;
     }
@@ -226,21 +236,21 @@ export class MeshNode extends bnode{
     onready(parent:bnode){
         let scene = parent.getscene();
         let mesh = this.Mesh;
+        console.log(mesh);
         if(!mesh.actionManager){
-            console.log(scene);
             mesh.actionManager = new BABYLON.ActionManager(scene);
         }
         var onpickAction = new BABYLON.ExecuteCodeAction(
             BABYLON.ActionManager.OnPickTrigger,
             function(evt:any) {
-                console.log(meshClicked);
                 if (evt.meshUnderPointer) {
                     var meshClicked = evt.meshUnderPointer;
-                    console.log(meshClicked);
+                    console.log(`Picked:${meshClicked.name}`, meshClicked);
+                }else{
+                    console.log(`Triggered:${evt}`);
                 }
             });
         mesh.actionManager.registerAction(onpickAction);
-
     }
 }
 export class SpriteNode extends MeshNode{
@@ -262,11 +272,13 @@ export class SpriteNode extends MeshNode{
         let mgr = <BABYLON.SpriteManager>Scope.instance.get(mname);
         if (!mgr){
             mgr = new BABYLON.SpriteManager(mname, '', 2000, 800, scene);
+            mgr.isPickable = true;
             Scope.instance.set(mname, mgr);
         }
         this._mgr = mgr;
         mgr.texture
         let sp = new BABYLON.Sprite(bname, mgr);
+        sp.isPickable = true;
         this.obj = sp;
         this._parent = parent;
     }
@@ -396,8 +408,8 @@ export class GroupNode extends MeshNode{
         let scene = parent.getscene();
         let bname = this.bprop('n');
         
-        let mesh = <BABYLON.Mesh>bmesh('Box', [bname, {size:0}, scene]);
-        mesh.isVisible = false;
+        let mesh = <BABYLON.Mesh>bmesh('Box', [bname, {size:0.01}, scene]);
+        //mesh.isVisible = false;
         this.obj = mesh;
     }
 }
