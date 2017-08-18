@@ -179,9 +179,15 @@ export class LightNode extends bnode{
         return this.obj;
     }
     onsetup(scene:SceneNode){
+        let lock = this.prop('lock');
+        let cam = this.scope().get('activeCamera');
+        let v = this.vprop('dir') || new BABYLON.Vector3(0,1,0);
         let light = bcreate(this.bprop('type')
-            ,[this.bprop('n'), new BABYLON.Vector3(0,1,0), scene.Scene]);
+            ,[this.bprop('n'), v, scene.Scene]);
         this.obj = light;
+        if (!lock && cam){
+            light.position = cam.position;
+        }
     }
 }
 
@@ -407,8 +413,8 @@ export class GroupNode extends MeshNode{
         let scene = parent.getscene();
         let bname = this.bprop('n');
         
-        let mesh = <BABYLON.Mesh>bmesh('Box', [bname, {size:0.01}, scene]);
-        //mesh.isVisible = false;
+        let mesh = <BABYLON.Mesh>bmesh('Box', [bname, {size:0.001}, scene]);
+        mesh.isVisible = false;
         this.obj = mesh;
     }
 }
