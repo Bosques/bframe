@@ -31,10 +31,10 @@
     <b.world alias="world">
         <b.scene alias="scn">
             <b.material n="default" color="{
-                    diffuse:[1.0, 0.5, 0.4]
-                    , emissive:[1, 0.4, 0.5]
-                    , ambient:[1, 0.3, 0.6]
-                    , specular:[1.0, 0.2, 0.7]
+                    diffuse:[1, 0.5, 0.4]
+                    , emissive:[0, 0, 0]
+                    , ambient:[0, 0, 0]
+                    , specular:[0, 0, 0]
                 }"
                 ></b.material>
             <b.material n="diff" color="{
@@ -56,8 +56,8 @@
                 pos="[0, 10, -10]" 
                 abr="[45, 45, 10]"
                 active="1"></b.camera>
-
-            <b.light alias="lht" type="DirectionalLight" dir="[1,0,0]"></b.light>
+            <b.light type="DirectionalLight" dir="[1,0,-0.5]" pos="[-5,0,0]"></b.light>
+            <!-- <b.light alias="lht" type="DirectionalLight" dir="[1,0,0]"></b.light> -->
             <b.group n="group" group="1" rot="[45, 0, 0]" center="[3,3,3]">
                 <b.mesh alias="sph" type="Sphere" n="sphere1" pos="[0,-2,0]" options="{segments:16, diameter:2}">
                     <b.sprite n="sp1" manager="sm1" pos="[0,0,4]">

@@ -182,8 +182,18 @@ export class LightNode extends bnode{
         let lock = this.prop('lock');
         let cam = this.scope().get('activeCamera');
         let v = this.vprop('dir') || new BABYLON.Vector3(1,1,1);
-        let light = bcreate(this.bprop('type')
-            ,[this.bprop('n'), v, scene.Scene]);
+        let type =  this.bprop('type');
+        let light:any = null;
+        if (type == 'SpotLight'){
+            let pos = this.vprop('pos');
+            let angle = this.bprop('angle') || 0.8;
+            let exponent = this.bprop('exponent') || 2;
+            light = bcreate(type
+                ,[this.bprop('n'), pos, v, angle, exponent, scene.Scene]);
+        }else{
+            light = bcreate(type
+                ,[this.bprop('n'), v, scene.Scene]);
+        }
         this.obj = light;
         if (!lock && cam){
             console.log('light follow');
