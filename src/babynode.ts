@@ -181,12 +181,14 @@ export class LightNode extends bnode{
     onsetup(scene:SceneNode){
         let lock = this.prop('lock');
         let cam = this.scope().get('activeCamera');
-        let v = this.vprop('dir') || new BABYLON.Vector3(0,1,0);
+        let v = this.vprop('dir') || new BABYLON.Vector3(1,1,1);
         let light = bcreate(this.bprop('type')
             ,[this.bprop('n'), v, scene.Scene]);
         this.obj = light;
         if (!lock && cam){
+            console.log('light follow');
             light.position = cam.position;
+            light.parent = cam;
         }
     }
 }
@@ -240,22 +242,29 @@ export class MeshNode extends bnode{
         }
     }
     onready(parent:bnode){
+        let scope = this.scope();
         let scene = parent.getscene();
+        let silent = this.bprop('silent');
         let mesh = this.Mesh;
-        if(!mesh.actionManager){
-            mesh.actionManager = new BABYLON.ActionManager(scene);
-        }
-        var onpickAction = new BABYLON.ExecuteCodeAction(
-            BABYLON.ActionManager.OnPickTrigger,
-            function(evt:any) {
-                if (evt.meshUnderPointer) {
-                    var meshClicked = evt.meshUnderPointer;
-                    console.log(`Picked:${meshClicked.name}`, meshClicked);
-                }else{
-                    console.log(`Triggered:${evt}`);
+        if (!silent){
+            if(!mesh.actionManager){
+                mesh.actionManager = new BABYLON.ActionManager(scene);
+            }
+            var onpickAction = new BABYLON.ExecuteCodeAction(
+                BABYLON.ActionManager.OnPickTrigger,
+                function(evt:any) {
+                    if (evt.meshUnderPointer) {
+                        var meshClicked = evt.meshUnderPointer;
+                        let cam = <BABYLON.TargetCamera>scope.get('activeCamera');
+                        cam.setTarget(meshClicked);
+                        console.log(`Picked:${meshClicked.name}`, meshClicked);
+                    }else{
+                        console.log(`Triggered:${evt}`);
+                    }
                 }
-            });
-        mesh.actionManager.registerAction(onpickAction);
+            );
+            mesh.actionManager.registerAction(onpickAction);
+        }
     }
 }
 export class SpriteNode extends MeshNode{
@@ -277,13 +286,13 @@ export class SpriteNode extends MeshNode{
         let mgr = <BABYLON.SpriteManager>Scope.instance.get(mname);
         if (!mgr){
             mgr = new BABYLON.SpriteManager(mname, '', 2000, 800, scene);
-            mgr.isPickable = true;
+            mgr.isPickable = false;
             Scope.instance.set(mname, mgr);
         }
         this._mgr = mgr;
         mgr.texture
         let sp = new BABYLON.Sprite(bname, mgr);
-        sp.isPickable = true;
+        sp.isPickable = false;
         this.obj = sp;
         this._parent = parent;
     }
@@ -296,7 +305,7 @@ export class SpriteNode extends MeshNode{
             let a = parent.Mesh.getAbsolutePosition();
             
             let op = [a.x+p[0], a.y+p[1], a.z+p[2]];
-            console.log(parent.Mesh.name, [a.x,a.y,a.z], op);
+            //console.log(parent.Mesh.name, [a.x,a.y,a.z], op);
             //this._props.pos = op;
             this.setprop('pos', op);
         }
