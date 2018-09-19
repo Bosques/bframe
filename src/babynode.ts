@@ -262,11 +262,11 @@ export class MeshNode extends bnode{
             }
             var onpickAction = new BABYLON.ExecuteCodeAction(
                 BABYLON.ActionManager.OnPickTrigger,
-                function(evt:any) {
+                function(evt:BABYLON.ActionEvent) {
                     if (evt.meshUnderPointer) {
                         var meshClicked = evt.meshUnderPointer;
                         let cam = <BABYLON.TargetCamera>scope.get('activeCamera');
-                        cam.setTarget(meshClicked);
+                        cam.setTarget(<any>meshClicked);
                         console.log(`Picked:${meshClicked.name}`, meshClicked);
                     }else{
                         console.log(`Triggered:${evt}`);
